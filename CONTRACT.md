@@ -1,6 +1,6 @@
 # The waffle tools contract, v0.1 (draft)
 
-Status: draft for review, 2026-10-30. Not tagged. Field names in this text become binding when
+Status: draft, 2026-10-30, with rascal's first review folded in. Not tagged. Field names in this text become binding when
 v0.1 is tagged; until then they are the agreed shape, not the wire.
 
 This is the external interface shared by the waffle image tools: squint (checks an image against
@@ -66,10 +66,12 @@ How a tool names an image to another tool. Tools never share ids, workspaces or 
 
 ### 2.2 The pixel digest is a convenience
 
-- Canonical form: decode to 8 bits per channel; RGB, or RGBA if and only if the file has an alpha
-  channel; no colour-profile conversion; no EXIF orientation; rows top to bottom, pixels left to
-  right, channels interleaved. Digest: SHA-256 over the ASCII bytes `waffle-pixels-v1\n`, then
-  width, height and channel count as little-endian u32, then the samples.
+- Canonical form: decode the file; keep 8-bit grey (1 channel), 8-bit RGB (3) and 8-bit RGBA (4)
+  as decoded, and convert every other layout to 8-bit RGB. No colour-profile conversion, no EXIF
+  orientation; rows top to bottom, pixels left to right, channels interleaved.
+- Digest: SHA-256 over the ASCII bytes `pixels`, one zero byte, then width, height and channel
+  count as little-endian u32, then the samples. `pixel_sha256` is its lowercase hex. This is
+  rascal's existing recipe (rascal ADR 0016), byte for byte, so its identities and fixtures stand.
 - Decoders MAY disagree on lossy formats (JPEG chroma upsampling and IDCT differ by a level between
   libraries). A receiver whose `pixel_sha256` differs while `file_sha256` matches MUST NOT treat it
   as an error; it MAY add a note.
@@ -89,7 +91,9 @@ copy or any other frame internal to a tool.
   "straddles_wrap": false,
   "label": "a seagull on the left lamp post",
   "disposition": "violation",        // the tool's own word, OPTIONAL
-  "confidence": "confident",         // the tool's own word or a number in [0, 1], OPTIONAL
+  "confidence": "confident",         // the tool's own word, OPTIONAL
+  "score": null,                     // a number in [0, 1], OPTIONAL, with score_kind
+  "score_kind": null,                // what the score is ("owlv2-detection"), REQUIRED with score
   "evidence": "source",              // the evidence kind where there is one, OPTIONAL
   "reason": null,                    // REQUIRED for `absent`, else OPTIONAL
   "source": { "tool": "squint", "version": "0.2.0", "run": "decision-…", "item": "F1" }
@@ -106,8 +110,10 @@ copy or any other frame internal to a tool.
   height)))` decimals).
 - A receiver that rasterises snaps outward: the near edge floors, the far edge ceils, so a
   location never loses a pixel it touches.
-- Lengths (`width` of a `line`, `radius` of a `stroke`) are in pixels of the referenced image; the
-  reference pins its dimensions.
+- Lengths are in pixels of the referenced image, and the unit is in the name: `width_px` of a
+  `line`, `radius_px` of a `stroke`. A fraction would need an axis, and a radius on a non-square
+  image has no honest one; the reference pins the dimensions, so the conversion is exact. A length
+  MUST be positive and is rounded up when rasterised.
 - A receiver MUST refuse a location whose `image` does not match the image it was given (2.1).
 
 ### 3.2 Kinds
@@ -115,9 +121,9 @@ copy or any other frame internal to a tool.
 | `kind` | each part holds | notes |
 |---|---|---|
 | `bbox` | `bbox: [x0, y0, x1, y1]`, `x0 < x1`, `y0 < y1` | |
-| `polygon` | `points: [[x, y], …]`, 3 to 64 vertices, simple | |
-| `line` | `column: x` or `path: [[x, y], …]`; and `width` | rascal's seam line |
-| `stroke` | `path: [[x, y], …]`, `radius` | a brush stroke |
+| `polygon` | `points: [[x, y], …]`, 3 to 256 vertices, simple | room for a view's footprint cut at the seam |
+| `line` | `column: x` or `path: [[x, y], …]`; and `width_px` | rascal's seam line |
+| `stroke` | `path: [[x, y], …]`, `radius_px` | a brush stroke |
 | `mask` | `mask: { "image": {reference}, "threshold": 128 }` | a greyscale 8-bit rendering at the image's width and height; pixels at or above `threshold` are inside |
 | `whole_image` | nothing (`parts: []`) | a global defect: a broken render, a wrong projection |
 | `absent` | nothing (`parts: []`); `reason` required | the thing is missing; no geometry, never an invented box |
@@ -132,7 +138,12 @@ copy or any other frame internal to a tool.
   provenance) MAY be offered as an MCP resource for tools that understand it; receivers that do
   not need only the rendering.
 - `disposition`, `confidence` and `evidence` are the producing tool's vocabulary, carried so an
-  agent can show or filter them. A receiver MUST NOT assume another tool's values.
+  agent can show or filter them. The tool MUST list each word it can emit in its description
+  (`vocabulary`, 6), so the playground can render them. A receiver MUST NOT assume another tool's
+  values.
+- `score` is for a tool with a real measured number (rascal's detector score), named by
+  `score_kind`. It is never comparable across tools or kinds, and a tool whose confidence is a
+  model's category (squint) does not invent one.
 - A tool's job roles (squint's `candidate` and `source`) are not part of a location; the image
   reference is.
 
@@ -178,7 +189,9 @@ Every image a tool returns is an **image out**: its reference, its role, and one
 ## 5. The result
 
 One shape everywhere: the MCP tool result's `structuredContent`, the run resource, and the file
-`run.json` written last into every run directory. A **header** the contract owns and a **body**
+`run.json` written last into every run directory. `run.json` is written atomically (to a temporary
+name in the same directory, then renamed), because the playground and a retrying agent read it
+while the tool may still be running. A **header** the contract owns and a **body**
 the tool owns.
 
 ```jsonc
@@ -274,25 +287,37 @@ Present exactly when `status` is `error` or `invalid`:
       "renders": [ { "name": "report", "command": ["squint", "report", "view", "{run.dir}", "--port", "0"] } ]
     }
   ],
+  "vocabulary": { "disposition": ["violation", "allowed", "unsure"],
+                  "confidence": ["confident", "tentative"], "evidence": ["source", "prompt"] },
   "limits": { "inline_bytes": 33554432 },
-  "resources": [ "squint://run/{id}/run.json", "squint://run/{id}/journal" ],
+  "progress_interval_s": 10,
+  "resources": [ "squint://runs", "squint://run/{id}/run.json", "squint://run/{id}/journal" ],
   "x-squint": { }
 }
 ```
 
 - `needs_env` names variables; a tool MUST NOT print their values. A client shows whether each is
   set.
-- `duration` lets a client set its timeout up front (7.1).
+- `duration` lets a client set its timeout up front, and `progress_interval_s` (at most 10) is the
+  longest gap between progress notifications on a live run (7.1).
+- `vocabulary` lists every word the tool emits in a location's `disposition`, `confidence` and
+  `evidence` (3.2).
 
 ## 7. Long runs
 
 ### 7.1 Progress is a heartbeat
 
 An action is a plain MCP `tools/call`. When the call carries a progress token, the tool sends
-`notifications/progress` on every step it journals and at least every ten seconds while it waits,
-so a client that resets its timeout on progress never cuts off a live run. The payload is plain:
-`progress` and `total` where known, and a one-line `message` ("turn 2: waiting on the provider,
-42 s, $0.11 so far"). The rich timeline is the journal resource, not the progress stream.
+`notifications/progress` on every step it journals and at least every `progress_interval_s`
+(at most ten seconds) while it waits, so a client that resets its timeout on progress never cuts
+off a live run. The payload is plain: `progress`, `total` where known, and a one-line `message`
+("turn 2: waiting on the provider, 42 s, $0.11 so far"). The rich timeline is the journal
+resource, not the progress stream.
+
+MCP requires `progress` to increase on every notification, and a client may not reset its timeout
+on a repeated value. A run with a step count reports steps done; a heartbeat between steps, or a
+run with no step count, reports elapsed seconds with `total` omitted, and the words go in
+`message`. A tool never resends the same `progress` value.
 
 The first progress notification names the run resource.
 
@@ -307,9 +332,11 @@ returns no MCP result (the protocol says a cancelled request gets none).
 ### 7.3 Runs are resources
 
 Every run a server performs is readable by id: `<tool>://run/<id>/run.json` at least, and
-`<tool>://run/<id>/journal` for the journal. An agent whose call timed out or whose connection
-dropped reads the resource instead of calling again; the playground reads the same resources for
-its history.
+`<tool>://run/<id>/journal` for the journal. `<tool>://runs` lists recent runs newest first (id,
+action, status, started), so a run is always discoverable, including after a cancel or a dropped
+connection on a call that sent no progress token. An agent whose call timed out or whose
+connection dropped reads the resource instead of calling again; the playground reads the same
+resources for its history.
 
 ### 7.4 Retries do not pay twice
 
@@ -335,9 +362,13 @@ Lifted from `rascal serve` (rascal ADR 0015).
 - One MCP tool per action in the description, plus `describe`; each tool's input schema is its
   action's image slots, location slots and `params_schema`. A server MUST NOT require an injected
   context object: a client needs nothing but the description.
-- The result is the header and body as `structuredContent` with `isError: false` for `completed`; `invalid` is a result with `isError: true` and the header
-  filled in; `error` is a JSON-RPC error whose `data` is the header. Image content blocks only on
-  request (4.2).
+- Once a run exists, every outcome is an MCP tool result carrying the header and body as
+  `structuredContent`: `isError: false` for `completed`, `isError: true` for `invalid` and
+  `error`. The header is the point: spend to date, `retryable` and salvaged outputs (5.3) travel
+  only in a result, and a JSON-RPC error reaches a model client as an opaque failure.
+- JSON-RPC errors are reserved for failures before a run exists: an unknown tool, arguments the MCP
+  layer rejects against the input schema, the server itself failing.
+- Image content blocks only on request (4.2).
 - Rust tools SHOULD use the official SDK, `rmcp`, pinned exactly; rascal and squint pin `=3.8.0`.
   A tool in another language uses its official SDK at the same revision.
 - Every tool's test suite drives its server with an independently written client that shares no
@@ -349,7 +380,7 @@ Lifted from `rascal serve` (rascal ADR 0015).
 |---|---|
 | 0 | success (`completed`, and the tool's own success when it distinguishes one) |
 | 3 | `error` |
-| 64 | `usage` or any `invalid` |
+| 64 | any `invalid` (`usage` or `input`; the result's `error.code` tells them apart) |
 | 130 | cancelled by SIGINT |
 | 143 | cancelled by SIGTERM |
 | 1, 2 | the tool's own (squint: fail, unsure; rascal: nothing found under `--strict`) |
@@ -360,8 +391,9 @@ A conforming tool provides, at the contract version it names:
 
 1. `describe --json` and the `describe` MCP tool (6), validated against the schema in its tests.
 2. `serve` (8) with an action per description entry, progress (7.1), cancellation (7.2), run
-   resources (7.3) and spend limits where it spends (7.5).
-3. `run.json` (5) in every run directory, on every surface, including cancelled and failed runs.
+   resources and the runs list (7.3), and spend limits where it spends (7.5).
+3. `run.json` (5), written atomically, in every run directory, on every surface, including
+   cancelled and failed runs.
 4. Image references on every image in and out (2), verification of `expect` (4.1), and the
    contract's locations on every location that leaves it (3).
 5. The exit codes (9).
@@ -378,13 +410,3 @@ at each step. squint's steps replay recorded model replies, so the test runs off
 nothing. Both tools run it in CI against the contract's tagged release. It lands with the mask
 handoff (squint's region-scoped `allowed`, rascal's `mask` export), which is its definition of done;
 v0.1 ships the first half (squint finding to rascal mask).
-
-## 12. Open questions for review
-
-1. Lengths in pixels (`line.width`, `stroke.radius`) versus fractions: pixels follow rascal today
-   and are unambiguous given the reference; fractions would make every coordinate one unit.
-2. Whether `confidence` is a word or a number across tools, or stays each tool's own (as drafted).
-3. Whether `invalid` should be an MCP result with `isError: true` (as drafted, so the agent sees
-   the header) or a JSON-RPC error like `error`.
-4. The progress cadence: ten seconds is short enough for every client default seen so far; a
-   description could state it instead.
