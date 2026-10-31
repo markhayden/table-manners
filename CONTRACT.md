@@ -368,6 +368,10 @@ copy or any other frame internal to a tool.
 - `view` is a convenience a tool MAY accept as input (yaw 0 is the centre column increasing to the
   right; pitch 0 the horizon increasing upward; `fov` the horizontal field of a square view in
   degrees, 10 to 120). A tool MUST NOT emit one: a view's footprint leaves as `polygon` parts.
+- The producer sets `threshold` to match what its mask means, and a receiver uses the value it is
+  given, never an assumed 128. rascal's rendering is 255 in the core and a gradient across the
+  blend zone; for "change was allowed here" it sets `threshold: 1`, anything the composite may
+  touch.
 - A `mask` crosses as its rendering. A tool's own mask record (rascal's zones, prescriptions and
   provenance) MAY be offered as an MCP resource for tools that understand it; receivers that do
   not need only the rendering.

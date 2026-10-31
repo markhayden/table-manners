@@ -14,11 +14,11 @@ not part of the contract; it is deleted once both conform.
 | `group` shared by the pieces of a seam-split location | one location, several `parts`, `straddles_wrap: true` | n/a | change |
 | `polygon: [[x, y], …]`, at most 64 vertices | same name, at most 256 | raise | raise |
 | `line`: `column` or `path`, `width_px`; `stroke`: `path`, `radius_px` | same | n/a | none |
-| `view`: `yaw`, `pitch`, `fov` | same, input only, `fov` 10 to 120 | none | emit polygons |
+| `view`: `yaw`, `pitch`, `fov` | same, input only, `fov` 10 to 120; squint owns the sign convention (9.2) | none | accepts; never emits |
 | `whole_image`, `absent` | same; `absent` needs `reason` | add reasons | add reasons |
 | no mask kind | `mask`: a rendering and a threshold | read it (mask handoff) | export it |
 | squint's `confidence` words | `confidence`, listed in `vocabulary` | list them | n/a |
-| rascal's detector score | `score` with `score_kind` | n/a | change |
+| rascal's detector score, from the segmenter pack | `score` with `score_kind: "owlv2-detection"`, listed in `vocabulary.score_kind` | n/a | change |
 
 ## Images
 
