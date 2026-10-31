@@ -1,6 +1,6 @@
 [package]
 name = "table-manners"
-description = "Types and schemas of table-manners, the waffle image tools' shared contract: the external interface shared by squint, rascal and the tools after them"
+description = "Types and schemas of table-manners, the shared contract of the waffle tools: one external interface for squint, rascal and the tools after them"
 version = "0.1.0"
 edition = "2024"
 license = "Apache-2.0"

@@ -3,10 +3,11 @@
 Status: draft, 2026-10-30, with rascal's first review folded in. Not tagged. Field names in this
 text become binding when v0.1 is tagged; until then they are the agreed shape, not the wire.
 
-table-manners is the contract the waffle image tools keep at a shared table: the external interface
-of squint (checks an image against what was asked), rascal (finds, masks and composites regions),
-and the tools after them. Each tool keeps its own intent, internals and vocabulary. What an agent, a script or the playground sees from
-outside is the same in every tool, so tools chain in one pipeline without glue code:
+table-manners is the contract the waffle tools keep at a shared table: one external interface for
+squint (checks an image against what was asked), rascal (finds, masks and composites regions),
+and the tools after them. Each tool keeps its own intent, internals and vocabulary. What an agent,
+a script or the playground sees from outside is the same in every tool, so tools chain in one
+pipeline without glue code:
 
 ```
 generate ──► squint check ──► rascal remove ──► filler paints ──► squint check

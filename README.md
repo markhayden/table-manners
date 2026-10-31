@@ -1,6 +1,6 @@
 # table-manners
 
-The shared contract of the waffle image tools: the external interface of
+The shared contract of the waffle tools: one external interface for
 [squint](https://github.com/markhayden/squint) (checks an image against what was asked of it), [rascal](https://github.com/markhayden/rascal)
 (finds, masks and composites regions) and the tools after them. Each tool keeps its own intent and
 internals; what an agent or a pipeline sees from outside is the same in all of them, so they chain

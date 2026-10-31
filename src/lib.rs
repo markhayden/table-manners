@@ -1,4 +1,4 @@
-//! table-manners, the waffle image tools' shared contract (CONTRACT.md): serde types for its shared objects and the JSON
+//! table-manners, the shared contract of the waffle tools (CONTRACT.md): serde types for its shared objects and the JSON
 //! Schemas they match. No logic: a tool computes digests, verifies references and writes results
 //! itself, and validates against [`SCHEMAS`] in its own tests.
 //!
