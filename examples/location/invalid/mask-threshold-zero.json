@@ -1,0 +1,25 @@
+{
+  "image": {
+    "file_sha256": "3f9a000000000000000000000000000000000000000000000000000000000000",
+    "width": 2048,
+    "height": 1024,
+    "projection": "equirectangular",
+    "topology": "wrap"
+  },
+  "kind": "mask",
+  "parts": [
+    {
+      "mask": {
+        "image": {
+          "file_sha256": "5d2e222222222222222222222222222222222222222222222222222222222222",
+          "width": 2048,
+          "height": 1024,
+          "projection": "equirectangular",
+          "topology": "wrap"
+        },
+        "threshold": 0
+      }
+    }
+  ],
+  "straddles_wrap": false
+}

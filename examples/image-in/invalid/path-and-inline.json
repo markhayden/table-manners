@@ -1,0 +1,7 @@
+{
+  "path": "/a.png",
+  "inline": {
+    "media_type": "image/png",
+    "data": "AA=="
+  }
+}

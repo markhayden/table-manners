@@ -1,0 +1,9 @@
+{
+  "expect": {
+    "file_sha256": "3f9a000000000000000000000000000000000000000000000000000000000000",
+    "width": 1600,
+    "height": 900,
+    "projection": "flat",
+    "topology": "bounded"
+  }
+}

@@ -7,7 +7,23 @@ internals; what an agent or a pipeline sees from outside is the same in all of t
 without glue code.
 
 - [`CONTRACT.md`](CONTRACT.md): the specification (v0.1, draft).
-- `schemas/`, `vectors/`, `fixtures/`, `acceptance/` and the `waffle-tools-contract` Rust crate
-  follow once the text is agreed.
+- [`schemas/`](schemas): the JSON Schemas, the source of truth.
+- [`examples/`](examples): valid and invalid documents for each schema.
+- [`vectors/pixels/`](vectors/pixels): PNG test vectors for the pixel digest, written by
+  `make.py` from known samples.
+- The `waffle-tools-contract` crate (this directory): serde types matching the schemas, which it
+  embeds. No logic.
+- [`MAPPING.md`](MAPPING.md): what squint and rascal change to conform.
+- `fixtures/` (per-tool conformance fixtures) and `acceptance/` (the cross-tool test) follow with
+  each tool's conformance work.
+
+## Checks
+
+```
+cargo fmt --check
+cargo clippy --all-targets -- -D warnings
+cargo test
+python3 -I vectors/pixels/make.py && git diff --exit-code vectors/
+```
 
 Apache-2.0.

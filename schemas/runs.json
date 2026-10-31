@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:waffle-tools-contract:runs",
+  "title": "Runs list (CONTRACT.md 7.3)",
+  "description": "The `<tool>://runs` resource: recent runs, newest first, so a run is discoverable without its id.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["contract", "tool", "runs"],
+  "properties": {
+    "contract": { "$ref": "urn:waffle-tools-contract:result#/$defs/version" },
+    "tool": { "$ref": "urn:waffle-tools-contract:result#/$defs/tool" },
+    "runs": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "action", "status", "started", "resource"],
+        "properties": {
+          "id": { "type": "string", "minLength": 1 },
+          "action": { "$ref": "urn:waffle-tools-contract:result#/$defs/action_name" },
+          "status": { "enum": ["running", "completed", "cancelled", "error", "invalid"] },
+          "started": { "type": "string", "format": "date-time" },
+          "resource": { "type": "string", "pattern": "^[a-z][a-z0-9+.-]*://run/" }
+        }
+      }
+    }
+  }
+}

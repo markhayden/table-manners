@@ -1,0 +1,10 @@
+{
+  "path": "/abs/path/to/pano.png",
+  "expect": {
+    "file_sha256": "3f9a000000000000000000000000000000000000000000000000000000000000",
+    "width": 2048,
+    "height": 1024,
+    "projection": "equirectangular",
+    "topology": "wrap"
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "image": {
+    "file_sha256": "3f9a000000000000000000000000000000000000000000000000000000000000",
+    "width": 1600,
+    "height": 900,
+    "projection": "flat",
+    "topology": "bounded"
+  },
+  "kind": "bbox",
+  "parts": [
+    {
+      "bbox": [
+        0,
+        0,
+        0.1,
+        0.1
+      ]
+    },
+    {
+      "bbox": [
+        0.9,
+        0,
+        1,
+        0.1
+      ]
+    }
+  ],
+  "straddles_wrap": true
+}

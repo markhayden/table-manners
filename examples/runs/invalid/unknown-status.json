@@ -1,0 +1,16 @@
+{
+  "contract": "0.1.0",
+  "tool": {
+    "name": "rascal",
+    "version": "0.1.0"
+  },
+  "runs": [
+    {
+      "id": "r-8c1f",
+      "action": "remove",
+      "status": "queued",
+      "started": "2026-10-30T19:12:00.000Z",
+      "resource": "rascal://run/r-8c1f/run.json"
+    }
+  ]
+}

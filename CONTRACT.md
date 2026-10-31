@@ -27,8 +27,12 @@ Sources: squint ADR 0018 and SPEC "External interface"; rascal's seed section in
 - It does not define what a tool does, its own files, its journal's lines, its config format or its
   internal frames. A tool MAY add fields in its own namespace (the result body, `x-<tool>` keys in
   the description); it MUST NOT add fields to the shared objects.
-- The JSON Schemas under `schemas/` are the source of truth; this text explains them. The Rust
-  crate `waffle-tools-contract` holds serde types generated to match, with no logic.
+- The JSON Schemas under `schemas/` are the source of truth; this text explains them. Each schema's
+  `$id` is `urn:waffle-tools-contract:<name>` and references between them use those ids. The Rust
+  crate `waffle-tools-contract` holds serde types matching them and embeds them (`SCHEMAS`), with
+  no logic. `examples/` holds valid and invalid documents for each schema; the crate's tests check
+  both the schemas and the types against them.
+- `MAPPING.md` lists what squint and rascal change to conform, field by field.
 - Releases are tagged `vMAJOR.MINOR.PATCH`. Before 1.0 a minor release may break; after 1.0 only a
   major one may. Every result and description carries `contract` (the version the tool conforms
   to). A tool pins one release, keeps a hash-checked copy of its schemas, and SHOULD warn in CI
@@ -88,16 +92,17 @@ copy or any other frame internal to a tool.
   "image": { …image reference… },     // REQUIRED
   "kind": "bbox",                    // REQUIRED, 3.2
   "parts": [ { "bbox": [0.41, 0.22, 0.47, 0.31] } ],
-  "straddles_wrap": false,
+  "straddles_wrap": false,           // REQUIRED
   "label": "a seagull on the left lamp post",
   "disposition": "violation",        // the tool's own word, OPTIONAL
   "confidence": "confident",         // the tool's own word, OPTIONAL
-  "score": null,                     // a number in [0, 1], OPTIONAL, with score_kind
-  "score_kind": null,                // what the score is ("owlv2-detection"), REQUIRED with score
-  "evidence": "source",              // the evidence kind where there is one, OPTIONAL
-  "reason": null,                    // REQUIRED for `absent`, else OPTIONAL
+  "evidence": "source",              // the tool's own word, OPTIONAL
   "source": { "tool": "squint", "version": "0.2.0", "run": "decision-…", "item": "F1" }
 }
+// OPTIONAL as well: "score" (a number in [0, 1]) with "score_kind" (what it is, such as
+// "owlv2-detection"), each requiring the other; "reason", REQUIRED for `absent`. An absent
+// optional field is left out, never written as null. `source` (tool and version, with run and
+// item where there are some) is left out of a location an agent wrote itself.
 ```
 
 ### 3.1 Coordinates
@@ -121,16 +126,19 @@ copy or any other frame internal to a tool.
 | `kind` | each part holds | notes |
 |---|---|---|
 | `bbox` | `bbox: [x0, y0, x1, y1]`, `x0 < x1`, `y0 < y1` | |
-| `polygon` | `points: [[x, y], …]`, 3 to 256 vertices, simple | room for a view's footprint cut at the seam |
-| `line` | `column: x` or `path: [[x, y], …]`; and `width_px` | rascal's seam line |
-| `stroke` | `path: [[x, y], …]`, `radius_px` | a brush stroke |
-| `mask` | `mask: { "image": {reference}, "threshold": 128 }` | a greyscale 8-bit rendering at the image's width and height; pixels at or above `threshold` are inside |
+| `polygon` | `polygon: [[x, y], …]`, 3 to 256 vertices, simple | room for a view's footprint cut at the seam |
+| `line` | `column: x` or `path: [[x, y], …]` (2 to 256 points); and `width_px` | rascal's seam line |
+| `stroke` | `path: [[x, y], …]` (2 to 256 points), `radius_px` | a brush stroke |
+| `mask` | `mask: { "image": {reference}, "threshold": 128 }`, one part | a greyscale 8-bit rendering at the image's width and height; pixels at or above `threshold` (1 to 255) are inside |
 | `whole_image` | nothing (`parts: []`) | a global defect: a broken render, a wrong projection |
 | `absent` | nothing (`parts: []`); `reason` required | the thing is missing; no geometry, never an invented box |
-| `view` | `yaw`, `pitch`, `fov` | **input only**, on `equirectangular` images |
+| `view` | `yaw`, `pitch`, `fov`, one part | **input only**, on `equirectangular` images |
 
 - A part never crosses the wrap edge (x = 0 on a `wrap` image). A shape that does is emitted as two
-  parts with `straddles_wrap: true`. On a `bounded` image `straddles_wrap` MUST be false.
+  or more parts with `straddles_wrap: true`. On a `bounded` image `straddles_wrap` MUST be false.
+  (rascal's `group`, shared by the pieces of one split location, becomes one location's `parts`.)
+- The field holding each part's shape is named for its kind where the kind has one field (`bbox`,
+  `polygon`, `mask`), as squint's and rascal's locations already name them.
 - `view` is a convenience a tool MAY accept as input (yaw 0 is the centre column increasing to the
   right; pitch 0 the horizon increasing upward; `fov` the horizontal field of a square view in
   degrees, 10 to 120). A tool MUST NOT emit one: a view's footprint leaves as `polygon` parts.
@@ -159,7 +167,7 @@ Any named image slot of any action accepts one of:
 ```
 
 - `expect` is OPTIONAL. When present the tool verifies it (2.1).
-- **Paths** are accepted only on local transports (stdio), only inside the client's MCP roots and
+- **Paths** are absolute, and are accepted only on local transports (stdio), only inside the client's MCP roots and
   any narrower roots in the tool's config. Over any network transport a path MUST be refused
   (`invalid`, code `input`); a path in a remote call is a request to read the host's filesystem.
 - **Inline** bytes are bounded; each tool states its limit in its description (`limits.inline_bytes`).
@@ -256,8 +264,9 @@ Present exactly when `status` is `error` or `invalid`:
   `spend.usd` is what this run cost, including a cancelled or failed run's spend to date; 0 for a
   cache hit.
 - `cache`: `hit`, `miss` or `off`.
-- `images.in` and `images.out` carry roles from the tool's description (`candidate`, `source`,
-  `result`, `mask`, …). `locations.used` are those the run took in; `locations.found` those it
+- `images.in` lists each image the run took in as `{ slot, role, image }`: the slot it came
+  through, its role and its reference, never its bytes. `images.out` lists image outs (4.2). Roles
+  come from the tool's description (`candidate`, `source`, `result`, `mask`, …). `locations.used` are those the run took in; `locations.found` those it
   produced. Images and locations MAY be present on `error` and `cancelled`, and a tool MUST NOT
   drop an output it completed because a later step failed: an agent can salvage a mask and call a
   different filler.
@@ -300,8 +309,12 @@ Present exactly when `status` is `error` or `invalid`:
   set.
 - `duration` lets a client set its timeout up front, and `progress_interval_s` (at most 10) is the
   longest gap between progress notifications on a live run (7.1).
-- `vocabulary` lists every word the tool emits in a location's `disposition`, `confidence` and
-  `evidence` (3.2).
+- `vocabulary` lists every word the tool emits in a location's `disposition`, `confidence`,
+  `evidence` and `score_kind` (3.2).
+- An action's `locations` lists its location slots with the kinds each accepts; `outputs` names
+  the roles of the images it returns and whether it fills `locations.found`.
+- Action names are lowercase with underscores (`check`, `seam_heal`); `describe` is reserved.
+- `cost.basis` is required when `cost.may_spend` is true.
 
 ## 7. Long runs
 
@@ -333,8 +346,9 @@ returns no MCP result (the protocol says a cancelled request gets none).
 
 Every run a server performs is readable by id: `<tool>://run/<id>/run.json` at least, and
 `<tool>://run/<id>/journal` for the journal. `<tool>://runs` lists recent runs newest first (id,
-action, status, started), so a run is always discoverable, including after a cancel or a dropped
-connection on a call that sent no progress token. An agent whose call timed out or whose
+action, status, started, resource), so a run is always discoverable, including after a cancel or a dropped
+connection on a call that sent no progress token. A run still going is listed as `running`; its
+journal is readable, and its `run.json` exists once it has ended. An agent whose call timed out or whose
 connection dropped reads the resource instead of calling again; the playground reads the same
 resources for its history.
 

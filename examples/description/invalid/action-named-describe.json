@@ -1,0 +1,61 @@
+{
+  "contract": "0.1.0",
+  "tool": {
+    "name": "squint",
+    "version": "0.2.0",
+    "purpose": "Checks an image against what was asked of it."
+  },
+  "actions": [
+    {
+      "name": "describe",
+      "title": "Estimate",
+      "purpose": "The worst-case spend of a check and the session budget left.",
+      "images": [],
+      "locations": [],
+      "params_schema": {
+        "type": "object"
+      },
+      "outputs": {
+        "images": [],
+        "locations": []
+      },
+      "cost": {
+        "may_spend": false,
+        "needs_env": []
+      },
+      "duration": {
+        "typical_s": 0,
+        "max_s": 1
+      },
+      "renders": []
+    }
+  ],
+  "vocabulary": {
+    "disposition": [
+      "violation",
+      "allowed",
+      "unsure"
+    ],
+    "confidence": [
+      "confident",
+      "tentative"
+    ],
+    "evidence": [
+      "source",
+      "prompt"
+    ],
+    "score_kind": []
+  },
+  "limits": {
+    "inline_bytes": 33554432
+  },
+  "progress_interval_s": 10,
+  "resources": [
+    "squint://runs",
+    "squint://run/{id}/run.json",
+    "squint://run/{id}/journal"
+  ],
+  "x-squint": {
+    "rules": "squint rules --json"
+  }
+}

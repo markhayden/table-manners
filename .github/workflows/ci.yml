@@ -1,0 +1,23 @@
+name: ci
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      # rustup reads the version pinned in rust-toolchain.toml.
+      - run: rustup show active-toolchain
+      - run: cargo fmt --check
+      - run: cargo clippy --all-targets -- -D warnings
+      - run: cargo test
+      # The vectors are reproducible from make.py, byte for byte.
+      - run: python3 -I vectors/pixels/make.py && git diff --exit-code vectors/
+      - run: cargo package --list

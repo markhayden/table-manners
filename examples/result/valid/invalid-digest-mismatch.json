@@ -1,0 +1,38 @@
+{
+  "contract": "0.1.0",
+  "tool": {
+    "name": "squint",
+    "version": "0.2.0"
+  },
+  "action": "check",
+  "run": {
+    "id": "decision-1793386884140-53022",
+    "resource": "squint://run/decision-1793386884140-53022/run.json",
+    "dir": "/abs/squint-out/decision-1793386884140-53022"
+  },
+  "status": "invalid",
+  "error": {
+    "code": "input",
+    "retryable": false,
+    "reason": "candidate: file_sha256 does not match expect"
+  },
+  "started": "2026-10-30T19:09:42.118Z",
+  "finished": "2026-10-30T19:10:21.904Z",
+  "duration_ms": 39786,
+  "input_identity": "sha256:7777777777777777777777777777777777777777777777777777777777777777",
+  "spend": {
+    "usd": 0,
+    "basis": "measured"
+  },
+  "cache": "off",
+  "images": {
+    "in": [],
+    "out": []
+  },
+  "locations": {
+    "used": [],
+    "found": []
+  },
+  "notes": [],
+  "body": {}
+}

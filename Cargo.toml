@@ -1,0 +1,28 @@
+[package]
+name = "waffle-tools-contract"
+description = "Types and schemas of the waffle tools contract: the external interface shared by squint, rascal and the tools after them"
+version = "0.1.0"
+edition = "2024"
+license = "Apache-2.0"
+repository = "https://github.com/markhayden/waffle-tools-contract"
+rust-version = "1.99"
+# The crate ships its types and the schemas they embed; vectors, examples and fixtures stay in the
+# repository for tools to test against.
+include = ["src/**", "schemas/**", "CONTRACT.md", "README.md", "LICENSE"]
+
+[dependencies]
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+[dev-dependencies]
+image = { version = "0.25", default-features = false, features = ["png"] }
+jsonschema = { version = "0.60", default-features = false }
+sha2 = "0.11"
+
+[lints.clippy]
+all = "warn"
+unwrap_used = "warn"
+
+[lints.rust]
+unsafe_code = "forbid"
+missing_docs = "warn"
