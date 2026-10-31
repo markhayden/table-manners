@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "urn:waffle-tools-contract:image-reference",
+  "$id": "urn:table-manners:image-reference",
   "title": "Image reference (CONTRACT.md 2)",
   "description": "How a tool names an image to another tool: the file's digest and dimensions, its projection and topology.",
   "type": "object",

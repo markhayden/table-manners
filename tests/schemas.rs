@@ -9,7 +9,7 @@ use std::path::{Path, PathBuf};
 
 use serde::Serialize;
 use serde::de::DeserializeOwned;
-use waffle_tools_contract::{
+use table_manners::{
     Description, ImageIn, ImageOut, ImageReference, Location, RunResult, RunsList, SCHEMAS,
 };
 
@@ -17,7 +17,7 @@ fn root() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).to_path_buf()
 }
 
-/// Resolves `urn:waffle-tools-contract:<name>` from [`SCHEMAS`], never from the network.
+/// Resolves `urn:table-manners:<name>` from [`SCHEMAS`], never from the network.
 struct Embedded;
 
 impl jsonschema::Retrieve for Embedded {
@@ -35,7 +35,7 @@ impl jsonschema::Retrieve for Embedded {
 }
 
 fn validator(name: &str) -> jsonschema::Validator {
-    let id = format!("urn:waffle-tools-contract:{name}");
+    let id = format!("urn:table-manners:{name}");
     let (_, text) = SCHEMAS
         .iter()
         .find(|(schema_id, _)| *schema_id == id)
@@ -161,7 +161,7 @@ fn the_embedded_schemas_are_the_files_under_schemas() {
         .iter()
         .map(|(id, _)| {
             let name = id
-                .strip_prefix("urn:waffle-tools-contract:")
+                .strip_prefix("urn:table-manners:")
                 .expect("an id in the contract's namespace");
             format!("{name}.json")
         })

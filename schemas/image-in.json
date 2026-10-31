@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "urn:waffle-tools-contract:image-in",
+  "$id": "urn:table-manners:image-in",
   "title": "Image in (CONTRACT.md 4.1)",
   "description": "An image given to an action's slot, by absolute path (local transports only) or inline, with an optional expected reference.",
   "oneOf": [
@@ -10,7 +10,7 @@
       "required": ["path"],
       "properties": {
         "path": { "type": "string", "minLength": 1 },
-        "expect": { "$ref": "urn:waffle-tools-contract:image-reference" }
+        "expect": { "$ref": "urn:table-manners:image-reference" }
       }
     },
     {
@@ -19,7 +19,7 @@
       "required": ["inline"],
       "properties": {
         "inline": { "$ref": "#/$defs/inline" },
-        "expect": { "$ref": "urn:waffle-tools-contract:image-reference" }
+        "expect": { "$ref": "urn:table-manners:image-reference" }
       }
     }
   ],

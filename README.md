@@ -1,7 +1,7 @@
-# waffle-tools-contract
+# table-manners
 
-The external interface shared by the waffle image tools: [squint](https://github.com/markhayden/squint)
-(checks an image against what was asked of it), [rascal](https://github.com/markhayden/rascal)
+The shared contract of the waffle image tools: the external interface of
+[squint](https://github.com/markhayden/squint) (checks an image against what was asked of it), [rascal](https://github.com/markhayden/rascal)
 (finds, masks and composites regions) and the tools after them. Each tool keeps its own intent and
 internals; what an agent or a pipeline sees from outside is the same in all of them, so they chain
 without glue code.
@@ -11,7 +11,7 @@ without glue code.
 - [`examples/`](examples): valid and invalid documents for each schema.
 - [`vectors/pixels/`](vectors/pixels): PNG test vectors for the pixel digest, written by
   `make.py` from known samples.
-- The `waffle-tools-contract` crate (this directory): serde types matching the schemas, which it
+- The `table-manners` crate (this directory): serde types matching the schemas, which it
   embeds. No logic.
 - [`MAPPING.md`](MAPPING.md): what squint and rascal change to conform.
 - `fixtures/` (per-tool conformance fixtures) and `acceptance/` (the cross-tool test) follow with

@@ -1,13 +1,13 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "urn:waffle-tools-contract:location",
+  "$id": "urn:table-manners:location",
   "title": "Location (CONTRACT.md 3)",
   "description": "Where something is, on the original image, in fractions of its width and height measured at pixel edges.",
   "type": "object",
   "additionalProperties": false,
   "required": ["image", "kind", "parts", "straddles_wrap"],
   "properties": {
-    "image": { "$ref": "urn:waffle-tools-contract:image-reference" },
+    "image": { "$ref": "urn:table-manners:image-reference" },
     "kind": { "enum": ["bbox", "polygon", "line", "stroke", "mask", "whole_image", "absent", "view"] },
     "parts": { "type": "array" },
     "straddles_wrap": { "type": "boolean", "description": "True when one shape was split at the wrap edge into several parts." },
@@ -145,7 +145,7 @@
           "required": ["image", "threshold"],
           "description": "A greyscale 8-bit rendering at the located image's width and height; pixels at or above threshold are inside.",
           "properties": {
-            "image": { "$ref": "urn:waffle-tools-contract:image-reference" },
+            "image": { "$ref": "urn:table-manners:image-reference" },
             "threshold": { "type": "integer", "minimum": 1, "maximum": 255 }
           }
         }

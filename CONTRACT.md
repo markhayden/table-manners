@@ -1,11 +1,11 @@
-# The waffle tools contract, v0.1 (draft)
+# table-manners, v0.1 (draft)
 
-Status: draft, 2026-10-30, with rascal's first review folded in. Not tagged. Field names in this text become binding when
-v0.1 is tagged; until then they are the agreed shape, not the wire.
+Status: draft, 2026-10-30, with rascal's first review folded in. Not tagged. Field names in this
+text become binding when v0.1 is tagged; until then they are the agreed shape, not the wire.
 
-This is the external interface shared by the waffle image tools: squint (checks an image against
-what was asked), rascal (finds, masks and composites regions), and the tools after them. Each tool
-keeps its own intent, internals and vocabulary. What an agent, a script or the playground sees from
+table-manners is the contract the waffle image tools keep at a shared table: the external interface
+of squint (checks an image against what was asked), rascal (finds, masks and composites regions),
+and the tools after them. Each tool keeps its own intent, internals and vocabulary. What an agent, a script or the playground sees from
 outside is the same in every tool, so tools chain in one pipeline without glue code:
 
 ```
@@ -28,8 +28,8 @@ Sources: squint ADR 0018 and SPEC "External interface"; rascal's seed section in
   internal frames. A tool MAY add fields in its own namespace (the result body, `x-<tool>` keys in
   the description); it MUST NOT add fields to the shared objects.
 - The JSON Schemas under `schemas/` are the source of truth; this text explains them. Each schema's
-  `$id` is `urn:waffle-tools-contract:<name>` and references between them use those ids. The Rust
-  crate `waffle-tools-contract` holds serde types matching them and embeds them (`SCHEMAS`), with
+  `$id` is `urn:table-manners:<name>` and references between them use those ids. The Rust
+  crate `table-manners` holds serde types matching them and embeds them (`SCHEMAS`), with
   no logic. `examples/` holds valid and invalid documents for each schema; the crate's tests check
   both the schemas and the types against them.
 - `MAPPING.md` lists what squint and rascal change to conform, field by field.

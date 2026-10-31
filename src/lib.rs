@@ -1,4 +1,4 @@
-//! The waffle tools contract (CONTRACT.md): serde types for its shared objects and the JSON
+//! table-manners, the waffle image tools' shared contract (CONTRACT.md): serde types for its shared objects and the JSON
 //! Schemas they match. No logic: a tool computes digests, verifies references and writes results
 //! itself, and validates against [`SCHEMAS`] in its own tests.
 //!
@@ -15,31 +15,31 @@ pub const CONTRACT_VERSION: &str = "0.1.0";
 /// retriever that serves this list and nothing else.
 pub const SCHEMAS: &[(&str, &str)] = &[
     (
-        "urn:waffle-tools-contract:image-reference",
+        "urn:table-manners:image-reference",
         include_str!("../schemas/image-reference.json"),
     ),
     (
-        "urn:waffle-tools-contract:location",
+        "urn:table-manners:location",
         include_str!("../schemas/location.json"),
     ),
     (
-        "urn:waffle-tools-contract:image-in",
+        "urn:table-manners:image-in",
         include_str!("../schemas/image-in.json"),
     ),
     (
-        "urn:waffle-tools-contract:image-out",
+        "urn:table-manners:image-out",
         include_str!("../schemas/image-out.json"),
     ),
     (
-        "urn:waffle-tools-contract:result",
+        "urn:table-manners:result",
         include_str!("../schemas/result.json"),
     ),
     (
-        "urn:waffle-tools-contract:description",
+        "urn:table-manners:description",
         include_str!("../schemas/description.json"),
     ),
     (
-        "urn:waffle-tools-contract:runs",
+        "urn:table-manners:runs",
         include_str!("../schemas/runs.json"),
     ),
 ];

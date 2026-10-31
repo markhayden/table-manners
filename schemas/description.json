@@ -1,12 +1,12 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "urn:waffle-tools-contract:description",
+  "$id": "urn:table-manners:description",
   "title": "Description document (CONTRACT.md 6)",
   "description": "What a tool does, in terms a client needs nothing else to call it by: `<tool> describe --json` and the describe MCP tool.",
   "type": "object",
   "required": ["contract", "tool", "actions", "vocabulary", "limits", "progress_interval_s", "resources"],
   "properties": {
-    "contract": { "$ref": "urn:waffle-tools-contract:result#/$defs/version" },
+    "contract": { "$ref": "urn:table-manners:result#/$defs/version" },
     "tool": {
       "type": "object",
       "additionalProperties": false,
@@ -49,7 +49,7 @@
       "required": ["name", "title", "purpose", "images", "locations", "params_schema", "outputs", "cost", "duration", "renders"],
       "properties": {
         "name": {
-          "allOf": [{ "$ref": "urn:waffle-tools-contract:result#/$defs/action_name" }, { "not": { "const": "describe" } }],
+          "allOf": [{ "$ref": "urn:table-manners:result#/$defs/action_name" }, { "not": { "const": "describe" } }],
           "description": "The MCP tool name; describe is reserved for the description itself."
         },
         "title": { "type": "string", "minLength": 1 },

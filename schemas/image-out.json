@@ -1,15 +1,15 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "urn:waffle-tools-contract:image-out",
+  "$id": "urn:table-manners:image-out",
   "title": "Image out (CONTRACT.md 4.2)",
   "description": "An image a tool returns: its role, its reference and exactly one locator.",
   "type": "object",
   "required": ["role", "image"],
   "properties": {
     "role": { "type": "string", "pattern": "^[a-z0-9][a-z0-9_-]*$" },
-    "image": { "$ref": "urn:waffle-tools-contract:image-reference" },
+    "image": { "$ref": "urn:table-manners:image-reference" },
     "path": { "type": "string", "minLength": 1 },
-    "inline": { "$ref": "urn:waffle-tools-contract:image-in#/$defs/inline" },
+    "inline": { "$ref": "urn:table-manners:image-in#/$defs/inline" },
     "resource": { "type": "string", "pattern": "^[a-z][a-z0-9+.-]*://" }
   },
   "additionalProperties": false,
