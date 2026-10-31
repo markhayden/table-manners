@@ -3,21 +3,20 @@
 //! - Every `examples/<schema>/valid/*.json` validates and every `invalid/*.json` does not.
 //! - Every valid example deserialises into its Rust type and serialises back to the same JSON, so
 //!   the types and the schemas describe one shape.
-//! - [`SCHEMAS`] lists exactly the files under `schemas/`, byte for byte.
+//! - [`SCHEMAS`] lists exactly the files under `schemas/core/` and `schemas/images/`.
 
 use std::path::{Path, PathBuf};
 
 use serde::Serialize;
 use serde::de::DeserializeOwned;
-use table_manners::{
-    Description, ImageIn, ImageOut, ImageReference, Location, RunResult, RunsList, SCHEMAS,
-};
+use table_manners::images::{ImageIn, ImageOut, ImageReference, Location};
+use table_manners::{Description, RunResult, RunsList, SCHEMAS};
 
 fn root() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).to_path_buf()
 }
 
-/// Resolves `urn:table-manners:<name>` from [`SCHEMAS`], never from the network.
+/// Resolves `urn:table-manners:<dir>:<name>` from [`SCHEMAS`], never from the network.
 struct Embedded;
 
 impl jsonschema::Retrieve for Embedded {
@@ -34,17 +33,17 @@ impl jsonschema::Retrieve for Embedded {
     }
 }
 
+/// The validator for the schema named `name`, in whichever directory it is.
 fn validator(name: &str) -> jsonschema::Validator {
-    let id = format!("urn:table-manners:{name}");
-    let (_, text) = SCHEMAS
+    let (id, text) = SCHEMAS
         .iter()
-        .find(|(schema_id, _)| *schema_id == id)
-        .unwrap_or_else(|| panic!("no schema {id}"));
+        .find(|(id, _)| id.rsplit(':').next() == Some(name))
+        .unwrap_or_else(|| panic!("no schema named {name}"));
     let schema: serde_json::Value = serde_json::from_str(text).expect("schema parses");
     jsonschema::options()
         .with_retriever(Embedded)
         .build(&schema)
-        .unwrap_or_else(|e| panic!("{name}: {e}"))
+        .unwrap_or_else(|e| panic!("{id}: {e}"))
 }
 
 fn examples(name: &str, which: &str) -> Vec<(String, serde_json::Value)> {
@@ -146,31 +145,36 @@ fn runs() {
 
 #[test]
 fn the_embedded_schemas_are_the_files_under_schemas() {
-    let mut files: Vec<String> = std::fs::read_dir(root().join("schemas"))
-        .expect("schemas/")
-        .map(|entry| {
-            entry
+    let mut files: Vec<String> = Vec::new();
+    for dir in ["core", "images"] {
+        for entry in std::fs::read_dir(root().join("schemas").join(dir)).expect("schemas/<dir>/") {
+            let name = entry
                 .expect("entry")
                 .file_name()
                 .to_string_lossy()
-                .into_owned()
-        })
-        .collect();
+                .into_owned();
+            files.push(format!("{dir}/{name}"));
+        }
+    }
     files.sort();
     let mut embedded: Vec<String> = SCHEMAS
         .iter()
         .map(|(id, _)| {
-            let name = id
+            let rest = id
                 .strip_prefix("urn:table-manners:")
                 .expect("an id in the contract's namespace");
-            format!("{name}.json")
+            let (dir, name) = rest.split_once(':').expect("<dir>:<name>");
+            format!("{dir}/{name}.json")
         })
         .collect();
     embedded.sort();
     assert_eq!(files, embedded);
     for (id, text) in SCHEMAS {
         let schema: serde_json::Value = serde_json::from_str(text).expect("parses");
-        assert_eq!(schema["$id"], *id, "each schema's $id is its name");
+        assert_eq!(
+            schema["$id"], *id,
+            "each schema's $id is its directory and name"
+        );
         assert_eq!(
             schema["$schema"],
             "https://json-schema.org/draft/2020-12/schema"

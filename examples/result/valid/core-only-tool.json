@@ -1,0 +1,32 @@
+{
+  "contract": "0.1.0",
+  "tool": {
+    "name": "tidy",
+    "version": "0.1.0"
+  },
+  "action": "lint",
+  "run": {
+    "id": "l-1",
+    "resource": "tidy://run/l-1/run.json",
+    "dir": "/abs/tidy-out/l-1"
+  },
+  "status": "completed",
+  "error": null,
+  "started": "2026-10-30T19:09:42.118Z",
+  "finished": "2026-10-30T19:10:21.904Z",
+  "duration_ms": 39786,
+  "input_identity": "sha256:7777777777777777777777777777777777777777777777777777777777777777",
+  "spend": {
+    "usd": 0,
+    "basis": "measured"
+  },
+  "cache": "off",
+  "notes": [
+    "repair: the first submission omitted item C3; repaired in one turn"
+  ],
+  "body": {
+    "broken": [
+      "R2"
+    ]
+  }
+}

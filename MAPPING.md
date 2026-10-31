@@ -9,7 +9,7 @@ not part of the contract; it is deleted once both conform.
 
 | today | contract | squint | rascal |
 |---|---|---|---|
-| `frame: "raw:candidate"` / `frame: "raw:img-3"` | `image`: an image reference (2) | change | change |
+| `frame: "raw:candidate"` / `frame: "raw:img-3"` | `image`: an image reference (8) | change | change |
 | one shape per location, flat on the object (`kind`, `bbox`) | `parts: [{ "bbox": … }]` | change | change |
 | `group` shared by the pieces of a seam-split location | one location, several `parts`, `straddles_wrap: true` | n/a | change |
 | `polygon: [[x, y], …]`, at most 64 vertices | same name, at most 256 | raise | raise |
@@ -28,7 +28,7 @@ not part of the contract; it is deleted once both conform.
 | rascal: `workspace_import { path \| base64, projection }`, then ops by artifact id | image in on every op's slots, an implicit journaled import; ids still accepted | | change |
 | rascal's envelope `images` (frame, parent, identity) | image outs: role, reference, one locator | add | change |
 | rascal sends an image block for every image | image blocks only with `image_blocks: true` | n/a | change |
-| rascal's pixel digest (`pixels`, a zero byte, dimensions, samples) | the same recipe (2.2) | adopt | none |
+| rascal's pixel digest (`pixels`, a zero byte, dimensions, samples) | the same recipe (8.2) | adopt | none |
 
 ## Results
 
@@ -46,6 +46,6 @@ not part of the contract; it is deleted once both conform.
 | today | contract | squint | rascal |
 |---|---|---|---|
 | `rascal serve`: tools only, rmcp `=3.8.0`, `2025-11-25` | plus resources (runs, run.json, journal) and progress | add `serve` | add |
-| self-description: rascal's op manifests in `tools/list`; squint's `rules`, `tools list`, `catalog` | `describe --json` and the `describe` tool (6) | add | add |
+| self-description: rascal's op manifests in `tools/list`; squint's `rules`, `tools list`, `catalog` | `describe --json` and the `describe` tool (3), with `"profiles": ["images"]` | add | add |
 | exit codes: rascal 0, 1 (`--strict`), 3, 64; squint 0, 1, 2, 3, 64 | plus 130 and 143 on cancellation | add | add |
 | no `playground` subcommand | `playground` finds and starts the shared one | add | add |

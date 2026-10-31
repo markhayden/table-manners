@@ -1,13 +1,18 @@
 # table-manners
 
 The shared contract of the waffle tools: one external interface for
-[squint](https://github.com/markhayden/squint) (checks an image against what was asked of it), [rascal](https://github.com/markhayden/rascal)
-(finds, masks and composites regions) and the tools after them. Each tool keeps its own intent and
-internals; what an agent or a pipeline sees from outside is the same in all of them, so they chain
-without glue code.
+[squint](https://github.com/markhayden/squint) (checks an image against what was asked of it),
+[rascal](https://github.com/markhayden/rascal) (finds, masks and composites regions) and the tools
+after them. Each tool keeps its own intent and internals; what an agent or a pipeline sees from
+outside is the same in all of them, so they chain without glue code.
+
+A **core** covers every tool: results, self-description, long runs, the MCP server, exit codes.
+**Profiles** add what a kind of tool needs; v0.1 has one, **images**, which squint and rascal
+implement.
 
 - [`CONTRACT.md`](CONTRACT.md): the specification (v0.1, draft).
-- [`schemas/`](schemas): the JSON Schemas, the source of truth.
+- [`schemas/`](schemas): the JSON Schemas, the source of truth: `core/` for every tool, `images/`
+  for the images profile.
 - [`examples/`](examples): valid and invalid documents for each schema.
 - [`vectors/pixels/`](vectors/pixels): PNG test vectors for the pixel digest, written by
   `make.py` from known samples.
