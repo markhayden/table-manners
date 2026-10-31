@@ -1,0 +1,92 @@
+//! Each tool's conformance fixtures (CONTRACT.md 7, item 7) are valid against the schemas and
+//! read into the Rust types: `fixtures/<tool>/describe.json` a description, every `run-*.json`
+//! a result, `runs.json` a runs list. The tool generates them from its own code and keeps its
+//! copy current in its own CI; here they are held to the contract.
+
+use std::path::{Path, PathBuf};
+
+use table_manners::{Description, RunResult, RunsList, SCHEMAS};
+
+struct Embedded;
+
+impl jsonschema::Retrieve for Embedded {
+    fn retrieve(
+        &self,
+        uri: &jsonschema::Uri<String>,
+    ) -> Result<serde_json::Value, Box<dyn std::error::Error + Send + Sync>> {
+        let text = SCHEMAS
+            .iter()
+            .find(|(id, _)| *id == uri.as_str())
+            .map(|(_, text)| *text)
+            .ok_or_else(|| format!("no embedded schema {uri}"))?;
+        Ok(serde_json::from_str(text)?)
+    }
+}
+
+fn validator(id: &str) -> jsonschema::Validator {
+    let (_, text) = SCHEMAS.iter().find(|(s, _)| *s == id).expect("schema");
+    let schema: serde_json::Value = serde_json::from_str(text).expect("parses");
+    jsonschema::options()
+        .with_retriever(Embedded)
+        .build(&schema)
+        .expect("builds")
+}
+
+fn read(path: &Path) -> serde_json::Value {
+    serde_json::from_str(&std::fs::read_to_string(path).expect("fixture")).expect("JSON")
+}
+
+fn valid(validator: &jsonschema::Validator, path: &Path, doc: &serde_json::Value) {
+    let errors: Vec<String> = validator.iter_errors(doc).map(|e| e.to_string()).collect();
+    assert!(errors.is_empty(), "{}: {errors:?}", path.display());
+}
+
+#[test]
+fn every_tools_fixtures_hold_to_the_contract() {
+    let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("fixtures");
+    let description = validator("urn:table-manners:core:description");
+    let result = validator("urn:table-manners:core:result");
+    let runs = validator("urn:table-manners:core:runs");
+    let mut tools: Vec<PathBuf> = std::fs::read_dir(&root)
+        .expect("fixtures/")
+        .map(|e| e.expect("entry").path())
+        .filter(|p| p.is_dir())
+        .collect();
+    tools.sort();
+    assert!(!tools.is_empty(), "no tool has fixtures yet");
+    for tool in tools {
+        let name = tool
+            .file_name()
+            .expect("name")
+            .to_string_lossy()
+            .into_owned();
+        let describe = tool.join("describe.json");
+        assert!(describe.exists(), "{name}: no describe.json");
+        let mut results = 0;
+        for entry in std::fs::read_dir(&tool).expect("tool dir") {
+            let path = entry.expect("entry").path();
+            let file = path
+                .file_name()
+                .expect("name")
+                .to_string_lossy()
+                .into_owned();
+            let doc = read(&path);
+            if file == "describe.json" {
+                valid(&description, &path, &doc);
+                let d: Description = serde_json::from_value(doc).expect("a Description");
+                assert_eq!(d.tool.name, name, "{}: the tool's own name", path.display());
+            } else if file.starts_with("run-") {
+                valid(&result, &path, &doc);
+                let r: RunResult = serde_json::from_value(doc).expect("a RunResult");
+                assert_eq!(r.tool.name, name, "{}: the tool's own name", path.display());
+                results += 1;
+            } else if file == "runs.json" {
+                valid(&runs, &path, &doc);
+                let _: RunsList = serde_json::from_value(doc).expect("a RunsList");
+            } else {
+                panic!("{}: not a fixture this test knows", path.display());
+            }
+        }
+        assert!(results > 0, "{name}: no run-*.json");
+    }
+}
