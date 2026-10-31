@@ -86,7 +86,7 @@ canonical `wafflehouse`, `WAFFLEHOUSE_BIN` override, PATH then `~/.local/bin/waf
 browser bootstrap and opening. Review that owner packet independently of the core schemas;
 production installer publication remains a separate release subgate.
 
-## rascal's review of C4 (2026-10-31, rascal `f0e45fb`)
+## rascal's review of C4 (2026-10-31, rascal `f0e45fb`; revised after Wafflehouse's reply)
 
 rascal agrees with C4's direction: `_meta`, no MCP revision bump, per-process ledgers, no retry or
 job service. rascal already allocates the run and sends its resource in the first progress message
@@ -94,39 +94,41 @@ before the limits check and any filler call (`actions.rs` `run_action`); a cance
 the call permit leaves no run. The amendments below are what rascal would implement; squint's
 review decides the names with it.
 
-1. **One `run` object, not a second shape.** `table-manners/run` in progress `_meta` is the
-   result's `run` object (`id`, `resource`, `dir`, `session_id`, `client_run_id`), by the same
-   `$ref`. `session_id` and `client_run_id` are required and nullable in v0.2 results and run-list
-   entries, so absence never means "not reported".
+1. **One run reference.** A shared definition of the run's identity, `{id, resource, session_id,
+   client_run_id}`, used by `table-manners/run` in progress `_meta`, run-list entries and the
+   result's `run`. The result's `run` adds `dir`, optional, as squint proposes: a remote server has
+   no local directory. `session_id` and `client_run_id` are required and nullable.
 2. **A bounded correlation id.** `table-manners/client_run_id`: 1 to 128 characters of
    `[A-Za-z0-9._:-]`; it lands in files, listings and logs.
-3. **A reused id answers with the earlier run.** The rejection is a JSON-RPC error before a run
-   exists (as v0.1 already requires for pre-run failures), and its `data` carries the earlier
-   run's `run` object, so the client follows that run instead of resubmitting.
+3. **A reused id never selects another request.** The rejection is squint's structured
+   `client_run_id_reused` error, a JSON-RPC error before any run exists, and its `data` carries the
+   earlier run's reference. The client reconciles that reference with its own saved attempt; it
+   is never the new request's result. The id is claimed atomically before a run is allocated, so
+   concurrent submissions of one id execute at most once.
 4. **The run is listed from allocation.** A run is in the runs resource with state `running` and
-   its association from the moment the first notification names it, before paid work, not only
-   once `run.json` is written. rascal changes its listing to do this.
+   its reference from the moment the first notification names it, before paid work.
 5. **Reserve, then settle.** The limits check reserves the call's worst case into `reserved_usd`
-   in the same atomic step; the run's end moves its actual spend to `spent_usd`. Without this,
-   two calls under `--concurrency 2` both pass the check against the same `spent`. rascal has
-   that race today (it adds spend only at the end); the serial default hides it.
-6. **Spend survives the status.** A run that called a provider reports that call's spend
-   whatever its status (`cancelled`, `error`). rascal reports 0 today when a run is cancelled or
-   fails after the filler was called; rascal fixes this regardless of v0.2.
+   in the same atomic step; the run's end settles it (6). rascal has the race this prevents
+   (two calls under `--concurrency 2` both pass the check against the same `spent`).
+6. **Known charges are kept; unknown charges stay unknown.** A provider call is *not sent*
+   (refused before its request left the tool: no credential, connection refused, authentication
+   rejected), *known* (the provider answered), or *unresolved* (the request was sent and no
+   answer settles it: cancelled or killed mid-call, timed out, a failure status). A not-sent call
+   costs nothing and releases its reservation; known and unresolved calls count their worst case
+   whatever the run's status. Proposal: the result's `spend` adds `unresolved_usd` (the part of
+   `usd` not settled by an answer) and the session adds `unresolved_usd` (the part of `spent_usd`),
+   so a host shows "at most" rather than zero or a false exact figure. rascal fixes its own
+   accounting now and reports the unresolved part in its body until v0.2 names the field.
 7. **Reads never wait on the execution permit.** `describe`, `estimate` and every resource read,
-   `<tool>://session` included, MUST answer while a run holds the permit. rascal's resources
-   already do, but its `describe` and `estimate` actions take the permit; rascal moves them out.
-   Recommend this over "estimates may be serialized": the host then needs no rule about when
-   it may ask.
-8. **Estimates need not be runs.** rascal's `estimate` writes no run and no run-list entry;
-   squint's writes a zero-spend run. The contract should allow both and say an estimate MUST NOT
-   spend and carries the same `session` object as the resource, at a place C1 fixes in the
-   estimate's result. rascal's estimate body names today (`session_budget_usd`,
-   `session_spent_usd`, `session_left_usd`) go once that lands.
+   `<tool>://session` included, MUST answer while a run holds the permit. Recommended over
+   "estimates may be serialized": the host then needs no rule about when it may ask.
+8. **Estimates need not be runs.** rascal's `estimate` writes no run; squint's writes a zero-spend
+   run. Allow both; an estimate MUST NOT spend and carries the same `session` object as the
+   resource, at a place C1 fixes in the estimate's result.
 9. **Session schema details.** `budget_usd` and `remaining_usd` are null together when uncapped;
    `remaining_usd = max(0, budget_usd - spent_usd - reserved_usd)`; amounts are compared to
    1e-6 USD. rascal reads its configuration once at `serve` start, so its session id is per
    process; a reload, if one is added, changes it.
 
-Fixtures: rascal provides its own cancelled run fixture from its independent client
-(`tests/serve_contract.rs`), produced by rascal, alongside squint's; no paid calls.
+Fixtures: rascal produces its own cancelled and unresolved-spend runs from its independent client,
+alongside squint's; no paid calls.
