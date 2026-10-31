@@ -1,7 +1,7 @@
-# table-manners, v0.1 (draft)
+# table-manners, v0.1.0
 
-Status: draft, 2026-10-30, with rascal's first review folded in. Not tagged. Field names in this
-text become binding when v0.1 is tagged; until then they are the agreed shape, not the wire.
+Status: v0.1.0, 2026-10-30, reviewed from both squint's and rascal's sides. Field names and the
+schemas are binding at this tag.
 
 table-manners is the contract the waffle tools keep at a shared table: one external interface for
 squint (checks an image against what was asked), rascal (finds, masks and composites regions),
