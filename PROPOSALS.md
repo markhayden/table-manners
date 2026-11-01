@@ -213,3 +213,7 @@ run with the `not_ready` refusal naming the requirements (3.1); an estimate that
 is `refused: "readiness"` with `worst_case_usd` and, without configuration, `config_identity`
 null; a configuration is `present` when it loads, `invalid` when it does not parse; a server
 render exits 0 on stdin EOF or SIGTERM (3.2).
+
+Then: readiness describes the action as configured now, and its requirements name every variable
+that use reads; `config_identity` digests the built-in defaults when no file is loaded, so a call
+that spends nothing is estimated at 0 without a configuration (3.1, 4.5).

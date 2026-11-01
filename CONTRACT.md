@@ -218,7 +218,9 @@ action, what stands between the action and a run:
   secret, such as a model directory), `model` (a model or endpoint the action calls, as
   configured), `file` (a local file it needs, such as model weights) or `dependency` (a helper
   program or library).
-- An action's readiness describes its default use. A call is refused for a requirement only when
+- An action's readiness describes the action as the tool is configured now (a configured filler
+  is part of its use), and its requirements name every variable that use reads, so a host that
+  passes only the variables requirements name passes enough. A call is refused for a requirement only when
   that call needs it: a call that needs a `missing` or `invalid` requirement is refused before
   any run, as a JSON-RPC error `-32602` with `data` `{"reason": "not_ready", "run": null,
   "requirements": [...]}` (`schemas/core/refusal.json`) naming what it needs, so it writes no run,
@@ -425,10 +427,12 @@ It answers with an estimate (`schemas/core/estimate.json`) as `structuredContent
   equal bindings priced the same call.
 - `effective` names what the call would use where the arguments leave a choice to the tool:
   `model` (null when the action calls none) and `config_identity`, a digest of the configuration
-  in force. A tool MAY add fields under `x-<tool>`.
-- `worst_case_usd` is what the limits check would reserve. When the call cannot be priced (no
-  configuration, no model), the estimate is `refused: "readiness"` with `worst_case_usd` null and,
-  without a configuration, `effective.config_identity` null; never a made-up zero. `cap_usd` is the effective per-call cap
+  in force: the loaded file, or the tool's built-in defaults when it runs without one. A tool MAY add fields under `x-<tool>`.
+- `worst_case_usd` is what the limits check would reserve. When the call cannot be priced (it
+  needs a configuration or a model the tool lacks), the estimate is `refused: "readiness"` with
+  `worst_case_usd` null and, when the missing piece is the configuration, `effective.config_identity`
+  null; never a made-up zero. A call that needs nothing missing is priced as usual, at 0 when it
+  spends nothing. `cap_usd` is the effective per-call cap
   (the configured cap lowered by `max_spend_usd`), null when uncapped; null is never zero.
 - `allowed` is whether the limits check would pass right now. When it is false, `refused` is
   `cap`, `budget` or `readiness` (the action is not `ready`); otherwise null.
