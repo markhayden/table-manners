@@ -407,6 +407,50 @@
             }
           }
         }
+      },
+      "if": {
+        "properties": {
+          "cost": {
+            "properties": {
+              "may_spend": {
+                "const": true
+              }
+            }
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "params_schema": {
+            "required": [
+              "properties"
+            ],
+            "properties": {
+              "properties": {
+                "required": [
+                  "max_spend_usd"
+                ],
+                "properties": {
+                  "max_spend_usd": {
+                    "required": [
+                      "type",
+                      "exclusiveMinimum"
+                    ],
+                    "properties": {
+                      "type": {
+                        "const": "number"
+                      },
+                      "exclusiveMinimum": {
+                        "const": 0
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "description": "An action that may spend declares max_spend_usd, a number above zero, so a host can always pass its cap (CONTRACT.md 4.5)."
       }
     },
     "readiness": {

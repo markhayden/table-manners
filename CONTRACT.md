@@ -353,7 +353,11 @@ This is not exactly-once execution across processes: a new session forgets the i
 ### 4.5 Spend limits and estimates
 
 - A per-call cap in the tool's config. A call MAY lower it with the argument `max_spend_usd`; a
-  value above the configured cap is `invalid` (`usage`), never silently lowered.
+  value above the configured cap is `invalid` (`usage`), never silently lowered. Every action whose
+  `cost.may_spend` is true declares `max_spend_usd` in its `params_schema` as an optional
+  `{"type": "number", "exclusiveMinimum": 0}`, so a host can always pass its cap however
+  closed the rest of the schema is. A cap of zero is not a cap; a caller that must not spend does
+  not call.
 - A per-session budget in the tool's config, across every call the server process serves.
 - Both limits are enforced at the **limits check**, after allocation and before any paid step.
   The check fails the run with `cap` when the call's worst case is over its effective cap, and

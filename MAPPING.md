@@ -22,6 +22,7 @@ build against this branch by path until v0.3.0 is published, then pin `=0.3.0`.
 | `binding` over action, args with images by digest, tool version, config identity, session; `expires` (4.5) | to do | to do |
 | `_meta["table-manners/estimate"]` checked at the limits check: `stale_estimate` (4.5) | to do | to do |
 | `cap` and `budget` split; `max_spend_usd` above the configured cap is `invalid` (2.2, 4.5) | to do | to do |
+| every paid action's `params_schema` declares `max_spend_usd`, `exclusiveMinimum: 0` (4.5) | to do (already `exclusiveMinimum: 0`) | to do (today `minimum: 0`, on `estimate` only) |
 | `credential` for 401/403 and a missing key, never retryable (2.2) | to do | to do |
 | JSON-RPC refusal releases the `client_run_id` (4.4) | to do | to do |
 | renders: `kind`, URL-only stdout, stdin/SIGTERM lifetime, `--frame-ancestor` (3.2) | to do (`report view`, `report export`) | to do (`dash`) |

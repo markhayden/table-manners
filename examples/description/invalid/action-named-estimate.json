@@ -47,6 +47,11 @@
         "properties": {
           "prompt": {
             "type": "string"
+          },
+          "max_spend_usd": {
+            "type": "number",
+            "exclusiveMinimum": 0,
+            "description": "Lowers the configured per-call cap; never raises it."
           }
         },
         "required": [
@@ -154,6 +159,11 @@
         "properties": {
           "prompt": {
             "type": "string"
+          },
+          "max_spend_usd": {
+            "type": "number",
+            "exclusiveMinimum": 0,
+            "description": "Lowers the configured per-call cap; never raises it."
           }
         },
         "required": [
