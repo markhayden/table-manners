@@ -10,7 +10,9 @@ use std::path::{Path, PathBuf};
 use serde::Serialize;
 use serde::de::DeserializeOwned;
 use table_manners::images::{ImageIn, ImageOut, ImageReference, Location};
-use table_manners::{Description, Refusal, RunRef, RunResult, RunsList, SCHEMAS, Session};
+use table_manners::{
+    Description, Estimate, Refusal, RunRef, RunResult, RunsList, SCHEMAS, Session,
+};
 
 fn root() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).to_path_buf()
@@ -159,6 +161,11 @@ fn refusal() {
 }
 
 #[test]
+fn estimate() {
+    check::<Estimate>("estimate");
+}
+
+#[test]
 fn the_embedded_schemas_are_the_files_under_schemas() {
     let mut files: Vec<String> = Vec::new();
     for dir in ["core", "images"] {
@@ -214,6 +221,7 @@ fn every_example_directory_has_a_test() {
         dirs,
         [
             "description",
+            "estimate",
             "image-in",
             "image-out",
             "image-reference",

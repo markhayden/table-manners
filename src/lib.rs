@@ -12,7 +12,7 @@ use serde::{Deserialize, Serialize};
 pub mod images;
 
 /// The contract version this crate describes; every result and description carries it.
-pub const CONTRACT_VERSION: &str = "0.2.0";
+pub const CONTRACT_VERSION: &str = "0.3.0";
 
 /// Every schema as `($id, text)`. References between them use the `$id`s, so a validator needs a
 /// retriever that serves this list and nothing else.
@@ -56,6 +56,10 @@ pub const SCHEMAS: &[(&str, &str)] = &[
     (
         "urn:table-manners:core:refusal",
         include_str!("../schemas/core/refusal.json"),
+    ),
+    (
+        "urn:table-manners:core:estimate",
+        include_str!("../schemas/core/estimate.json"),
     ),
 ];
 
@@ -182,11 +186,18 @@ pub enum ErrorCode {
     Usage,
     /// An image or location the tool cannot take.
     Input,
+    /// The call named an estimate that no longer matches it, or has expired (4.5).
+    StaleEstimate,
     /// Reading or writing the tool's own files failed.
     Io,
     /// A remote model or service failed.
     Provider,
-    /// The per-call cap or the session budget would be exceeded.
+    /// A provider rejected the credential (401 or 403), or a needed one was missing; never
+    /// retryable.
+    Credential,
+    /// The call's worst case is over its effective per-call cap (4.5).
+    Cap,
+    /// The session budget cannot reserve the call's worst case (4.5).
     Budget,
     /// A bounded wait ran out.
     Timeout,
@@ -240,7 +251,7 @@ pub struct Description {
     pub profiles: Vec<Profile>,
     /// The tool.
     pub tool: DescribedTool,
-    /// One per MCP tool, `describe` excepted.
+    /// One per MCP tool, the reserved `describe` and `estimate` excepted.
     pub actions: Vec<Action>,
     /// Images profile (11.2): every word the tool emits in a location.
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -292,6 +303,8 @@ pub struct Action {
     pub outputs: Option<images::Outputs>,
     /// Whether and how it spends.
     pub cost: Cost,
+    /// Whether it can run here, now (3.1).
+    pub readiness: Readiness,
     /// How long it takes.
     pub duration: Duration,
     /// Commands that render a run.
@@ -307,8 +320,75 @@ pub struct Cost {
     /// How its spend is reported; required when it may spend.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub basis: Option<SpendBasis>,
-    /// Environment variables it needs, by name only.
-    pub needs_env: Vec<String>,
+}
+
+/// Whether an action can run here, now, and what stands in the way (3.1).
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct Readiness {
+    /// The action's state.
+    pub state: ReadinessState,
+    /// What it needs, met or not.
+    pub requirements: Vec<Requirement>,
+}
+
+/// An action's readiness (3.1).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum ReadinessState {
+    /// No requirement is missing or invalid.
+    Ready,
+    /// A requirement is missing or invalid, and a person can fix it.
+    NeedsSetup,
+    /// This build or platform cannot run the action.
+    Unavailable,
+}
+
+/// One thing an action needs (3.1). Never a credential value.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct Requirement {
+    /// What kind of thing.
+    pub kind: RequirementKind,
+    /// A variable, file or entry name.
+    pub name: String,
+    /// Whether it is there and accepted.
+    pub state: RequirementState,
+    /// A sentence a person can act on.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub setup: Option<String>,
+}
+
+/// The kinds of requirement (3.1).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum RequirementKind {
+    /// The tool's configuration, or an entry in it.
+    Config,
+    /// A credential, by variable name.
+    Credential,
+    /// A model or endpoint the action calls, as configured.
+    Model,
+    /// A local file it needs, such as model weights.
+    File,
+    /// A helper program or library.
+    Dependency,
+}
+
+/// A requirement's state (3.1).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum RequirementState {
+    /// Not there.
+    Missing,
+    /// There, and not checked.
+    Present,
+    /// A provider accepted it in this session.
+    Valid,
+    /// There and rejected, or it does not parse.
+    Invalid,
+    /// The tool cannot tell.
+    Unknown,
 }
 
 /// How long an action takes.
@@ -321,14 +401,30 @@ pub struct Duration {
     pub max_s: f64,
 }
 
-/// A command that renders a run; `{run.dir}` is substituted.
+/// A command that shows a run to a person (3.2); `{run.dir}` and, for a server,
+/// `{frame_ancestor}` are substituted.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct Render {
     /// Its name.
     pub name: String,
+    /// What it does when run.
+    pub kind: RenderKind,
+    /// Server renders: the longest wait for the URL line, at most 60 seconds.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub ready_timeout_s: Option<u32>,
     /// The argument vector.
     pub command: Vec<String>,
+}
+
+/// What a render does (3.2).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum RenderKind {
+    /// Writes a file, prints its absolute path, exits.
+    Document,
+    /// Prints its loopback URL once listening; serves until stdin closes or SIGTERM.
+    Server,
 }
 
 /// A page of the `<tool>://runs{?cursor}` resource (4.3).
@@ -422,4 +518,61 @@ pub struct Refusal {
 pub enum RefusalReason {
     /// The request's `client_run_id` was already used in this session.
     ClientRunIdReused,
+}
+
+/// What the reserved `estimate` tool returns (4.5): the worst case of one exact call, bound to
+/// its inputs, configuration, tool version and session. Never a run.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct Estimate {
+    /// The contract version the tool conforms to.
+    pub contract: String,
+    /// The tool.
+    pub tool: Tool,
+    /// The paid action priced.
+    pub action: String,
+    /// `sha256:<hex>`; sent back as `_meta["table-manners/estimate"]` on the paid call.
+    pub binding: String,
+    /// The serving session the binding belongs to.
+    pub session_id: String,
+    /// What the call would use where its arguments leave the choice to the tool.
+    pub effective: Effective,
+    /// What the limits check would reserve.
+    pub worst_case_usd: f64,
+    /// The effective per-call cap; none when uncapped, never a zero allowance.
+    pub cap_usd: Option<f64>,
+    /// Whether the limits check would pass now.
+    pub allowed: bool,
+    /// Why not, when `allowed` is false.
+    pub refused: Option<EstimateRefusal>,
+    /// The action's readiness (3.1).
+    pub readiness: Readiness,
+    /// One atomic observation of the session (4.6).
+    pub session: Session,
+    /// When the tool stops honouring the binding.
+    pub expires: String,
+}
+
+/// What an estimated call would use (4.5).
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct Effective {
+    /// The model or endpoint; none when the action calls none.
+    pub model: Option<String>,
+    /// `sha256:<hex>` of the configuration in force.
+    pub config_identity: String,
+    /// `x-<tool>` keys: the tool's own.
+    #[serde(flatten)]
+    pub extensions: BTreeMap<String, serde_json::Value>,
+}
+
+/// Why an estimated call would not pass the limits check (4.5).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum EstimateRefusal {
+    /// Its worst case is over the effective per-call cap.
+    Cap,
+    /// The session cannot hold its worst case.
+    Budget,
+    /// The action is not ready.
+    Readiness,
 }

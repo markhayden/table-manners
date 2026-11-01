@@ -1,0 +1,43 @@
+{
+  "contract": "0.3.0",
+  "tool": {
+    "name": "squint",
+    "version": "0.2.0"
+  },
+  "action": "source_fidelity",
+  "binding": "sha256:3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f",
+  "session_id": "0b7e3c5a-6f1d-4c2e-9a8b-3d4e5f6a7b8c",
+  "effective": {
+    "model": "claude-sonnet-5-5",
+    "config_identity": "sha256:a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1"
+  },
+  "worst_case_usd": 0.12,
+  "cap_usd": 0.5,
+  "allowed": false,
+  "refused": "provider",
+  "readiness": {
+    "state": "ready",
+    "requirements": [
+      {
+        "kind": "credential",
+        "name": "ANTHROPIC_API_KEY",
+        "state": "present"
+      }
+    ]
+  },
+  "session": {
+    "contract": "0.3.0",
+    "tool": {
+      "name": "rascal",
+      "version": "0.1.0"
+    },
+    "id": "0b7e3c5a-6f1d-4c2e-9a8b-3d4e5f6a7b8c",
+    "started": "2026-10-31T18:02:11.530Z",
+    "budget_usd": 2.0,
+    "spent_usd": 0.16,
+    "unresolved_usd": 0.04,
+    "reserved_usd": 0.04,
+    "remaining_usd": 1.8
+  },
+  "expires": "2026-11-01T20:15:00.000Z"
+}

@@ -1,13 +1,15 @@
 //! Each tool's conformance fixtures (CONTRACT.md 7, item 7) are valid against the schemas and
-//! read into the Rust types: `fixtures/<tool>/describe.json` a description, every `run-*.json`
-//! a result, every `runs*.json` a runs page, `session.json` a session and every `refusal-*.json`
-//! a reuse refusal's data; every dollar amount has at most six decimals (4.6). The tool
+//! read into the Rust types: `fixtures/<tool>/describe.json` and every `describe-*.json` a
+//! description, every `estimate-*.json` an estimate, every `run-*.json` a result, every
+//! `runs*.json` a runs page, `session.json` a session and every `refusal-*.json` a refusal's data; every dollar amount has at most six decimals (4.6). The tool
 //! generates them from its own code and keeps its copy current in its own CI; here they are held
 //! to the contract.
 
 use std::path::{Path, PathBuf};
 
-use table_manners::{Description, Refusal, RunResult, RunsList, SCHEMAS, Session};
+use table_manners::{
+    CONTRACT_VERSION, Description, Estimate, Refusal, RunResult, RunsList, SCHEMAS, Session,
+};
 
 struct Embedded;
 
@@ -82,6 +84,7 @@ fn every_tools_fixtures_hold_to_the_contract() {
     let runs = validator("urn:table-manners:core:runs");
     let session = validator("urn:table-manners:core:session");
     let refusal = validator("urn:table-manners:core:refusal");
+    let estimate = validator("urn:table-manners:core:estimate");
     let mut tools: Vec<PathBuf> = std::fs::read_dir(&root)
         .expect("fixtures/")
         .map(|e| e.expect("entry").path())
@@ -107,10 +110,22 @@ fn every_tools_fixtures_hold_to_the_contract() {
                 .into_owned();
             let doc = read(&path);
             six_decimals(&path, "", &doc);
-            if file == "describe.json" {
+            if let Some(version) = doc.get("contract") {
+                assert_eq!(
+                    version,
+                    CONTRACT_VERSION,
+                    "{}: fixtures are at this contract's version",
+                    path.display()
+                );
+            }
+            if file == "describe.json" || file.starts_with("describe-") {
                 valid(&description, &path, &doc);
                 let d: Description = serde_json::from_value(doc).expect("a Description");
                 assert_eq!(d.tool.name, name, "{}: the tool's own name", path.display());
+            } else if file.starts_with("estimate-") {
+                valid(&estimate, &path, &doc);
+                let e: Estimate = serde_json::from_value(doc).expect("an Estimate");
+                assert_eq!(e.tool.name, name, "{}: the tool's own name", path.display());
             } else if file.starts_with("run-") {
                 valid(&result, &path, &doc);
                 let r: RunResult = serde_json::from_value(doc).expect("a RunResult");

@@ -1,0 +1,146 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:table-manners:core:estimate",
+  "title": "Estimate (CONTRACT.md 4.5)",
+  "description": "What the reserved estimate tool returns as structuredContent: the worst case of one exact call, bound to its inputs, configuration, tool version and session. Never a run.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "contract",
+    "tool",
+    "action",
+    "binding",
+    "session_id",
+    "effective",
+    "worst_case_usd",
+    "cap_usd",
+    "allowed",
+    "refused",
+    "readiness",
+    "session",
+    "expires"
+  ],
+  "properties": {
+    "contract": {
+      "$ref": "urn:table-manners:core:result#/$defs/version"
+    },
+    "tool": {
+      "$ref": "urn:table-manners:core:result#/$defs/tool"
+    },
+    "action": {
+      "allOf": [
+        {
+          "$ref": "urn:table-manners:core:result#/$defs/action_name"
+        },
+        {
+          "not": {
+            "enum": [
+              "describe",
+              "estimate"
+            ]
+          }
+        }
+      ],
+      "description": "The paid action priced."
+    },
+    "binding": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "description": "Sent back as _meta[\"table-manners/estimate\"] on the paid call."
+    },
+    "session_id": {
+      "$ref": "urn:table-manners:core:run-ref#/$defs/session_id"
+    },
+    "effective": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "model",
+        "config_identity"
+      ],
+      "properties": {
+        "model": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "minLength": 1
+        },
+        "config_identity": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        }
+      },
+      "patternProperties": {
+        "^x-[a-z][a-z0-9-]*$": {}
+      }
+    },
+    "worst_case_usd": {
+      "$ref": "#/$defs/usd"
+    },
+    "cap_usd": {
+      "oneOf": [
+        {
+          "type": "null"
+        },
+        {
+          "$ref": "#/$defs/usd"
+        }
+      ],
+      "description": "The effective per-call cap; null when uncapped, never zero allowance."
+    },
+    "allowed": {
+      "type": "boolean"
+    },
+    "refused": {
+      "enum": [
+        null,
+        "cap",
+        "budget",
+        "readiness"
+      ]
+    },
+    "readiness": {
+      "$ref": "urn:table-manners:core:description#/$defs/readiness"
+    },
+    "session": {
+      "$ref": "urn:table-manners:core:session"
+    },
+    "expires": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the tool stops honouring the binding; at most 24 hours after the estimate."
+    }
+  },
+  "if": {
+    "properties": {
+      "allowed": {
+        "const": true
+      }
+    }
+  },
+  "then": {
+    "properties": {
+      "refused": {
+        "const": null
+      }
+    }
+  },
+  "else": {
+    "properties": {
+      "refused": {
+        "enum": [
+          "cap",
+          "budget",
+          "readiness"
+        ]
+      }
+    }
+  },
+  "$defs": {
+    "usd": {
+      "type": "number",
+      "minimum": 0
+    }
+  }
+}

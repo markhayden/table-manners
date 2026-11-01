@@ -326,6 +326,9 @@ pub struct ImageSlot {
     pub role: String,
     /// Whether the call must fill it.
     pub required: bool,
+    /// Whether it takes a non-empty list of images (10.1); false when absent.
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub many: bool,
 }
 
 /// A location slot.

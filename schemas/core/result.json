@@ -73,8 +73,11 @@
               "enum": [
                 "usage",
                 "input",
+                "stale_estimate",
                 "io",
                 "provider",
+                "credential",
+                "cap",
                 "budget",
                 "timeout",
                 "tool_process",
@@ -87,6 +90,25 @@
             "reason": {
               "type": "string",
               "minLength": 1
+            }
+          },
+          "if": {
+            "properties": {
+              "code": {
+                "enum": [
+                  "stale_estimate",
+                  "credential",
+                  "cap",
+                  "budget"
+                ]
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "retryable": {
+                "const": false
+              }
             }
           }
         }

@@ -1,5 +1,5 @@
 {
-  "contract": "0.2.0",
+  "contract": "0.3.0",
   "profiles": [
     "images"
   ],
@@ -55,9 +55,17 @@
       },
       "cost": {
         "may_spend": true,
-        "basis": "measured",
-        "needs_env": [
-          "GEMINI_API_KEY"
+        "basis": "measured"
+      },
+      "readiness": {
+        "state": "ready",
+        "requirements": [
+          {
+            "kind": "credential",
+            "name": "GEMINI_API_KEY",
+            "state": "present",
+            "setup": "Set GEMINI_API_KEY in the environment the tool is started with."
+          }
         ]
       },
       "duration": {
@@ -67,13 +75,27 @@
       "renders": [
         {
           "name": "report",
+          "kind": "server",
+          "ready_timeout_s": 10,
           "command": [
             "squint",
             "report",
             "view",
             "{run.dir}",
             "--port",
-            "0"
+            "0",
+            "--frame-ancestor",
+            "{frame_ancestor}"
+          ]
+        },
+        {
+          "name": "export",
+          "kind": "document",
+          "command": [
+            "squint",
+            "report",
+            "export",
+            "{run.dir}"
           ]
         }
       ]

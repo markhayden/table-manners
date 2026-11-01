@@ -1,0 +1,147 @@
+{
+  "contract": "0.3.0",
+  "profiles": [
+    "images"
+  ],
+  "tool": {
+    "name": "squint",
+    "version": "0.2.0",
+    "purpose": "Checks an image against what was asked of it."
+  },
+  "actions": [
+    {
+      "name": "check",
+      "title": "Source fidelity",
+      "purpose": "Checks a candidate against its source and prompt.",
+      "images": [
+        {
+          "slot": "candidate",
+          "role": "candidate",
+          "required": true
+        },
+        {
+          "slot": "source",
+          "role": "source",
+          "required": true
+        },
+        {
+          "slot": "references",
+          "role": "reference",
+          "required": false,
+          "many": true
+        }
+      ],
+      "locations": [
+        {
+          "slot": "allowed",
+          "kinds": [
+            "mask",
+            "bbox",
+            "polygon"
+          ],
+          "required": false
+        }
+      ],
+      "params_schema": {
+        "type": "object",
+        "properties": {
+          "prompt": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "prompt"
+        ]
+      },
+      "outputs": {
+        "images": [],
+        "locations": [
+          "found"
+        ]
+      },
+      "cost": {
+        "may_spend": true,
+        "basis": "measured"
+      },
+      "readiness": {
+        "state": "ready",
+        "requirements": [
+          {
+            "kind": "config",
+            "name": "squint.toml",
+            "state": "present"
+          },
+          {
+            "kind": "credential",
+            "name": "ANTHROPIC_API_KEY",
+            "state": "valid",
+            "setup": "Set ANTHROPIC_API_KEY in the environment squint is started with."
+          },
+          {
+            "kind": "model",
+            "name": "claude-sonnet-5-5",
+            "state": "present"
+          }
+        ]
+      },
+      "duration": {
+        "typical_s": 40,
+        "max_s": 600
+      },
+      "renders": [
+        {
+          "name": "report",
+          "ready_timeout_s": 10,
+          "command": [
+            "squint",
+            "report",
+            "view",
+            "{run.dir}",
+            "--port",
+            "0",
+            "--frame-ancestor",
+            "{frame_ancestor}"
+          ]
+        },
+        {
+          "name": "export",
+          "kind": "document",
+          "command": [
+            "squint",
+            "report",
+            "export",
+            "{run.dir}"
+          ]
+        }
+      ]
+    }
+  ],
+  "vocabulary": {
+    "disposition": [
+      "violation",
+      "allowed",
+      "unsure"
+    ],
+    "confidence": [
+      "confident",
+      "tentative"
+    ],
+    "evidence": [
+      "source",
+      "prompt"
+    ],
+    "score_kind": []
+  },
+  "limits": {
+    "inline_bytes": 33554432
+  },
+  "progress_interval_s": 10,
+  "resources": [
+    "squint://runs",
+    "squint://run/{id}/run.json",
+    "squint://run/{id}/journal"
+  ],
+  "x-squint": {
+    "rules": "squint rules --json"
+  }
+}

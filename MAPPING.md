@@ -7,7 +7,26 @@ not part of the contract; it is deleted once both conform.
 
 **Status 2026-11-01.** Both tools conform to v0.2.0 and pin `=0.2.0` from crates.io: rascal since
 milestone M11 (tag `m11`), squint since milestone M8 (tag `m8`). Wafflehouse pins `=0.2.0` as a
-client. v0.3 is being drafted in `PROPOSALS.md`. The v0.1 columns below are kept for review.
+client. v0.3 is drafted in CONTRACT.md on branch `v0.3`; its work list is below. The v0.1 columns below are kept for review.
+
+## v0.3 (readiness, bound estimates, renders)
+
+Work for rascal milestone M12 and squint milestone M9; Wafflery adopts it as the client. Both tools
+build against this branch by path until v0.3.0 is published, then pin `=0.3.0`.
+
+| contract | squint | rascal |
+|---|---|---|
+| `describe` and `serve` work with no configuration; `--config <path>` (3.1, 4.6) | to do | to do |
+| per-action `readiness`, requirement states from local inspection and this session's answers; `cost.needs_env` gone (3.1) | to do | to do |
+| `estimate` reserved: `{action, arguments}` in, `estimate.json` out, never a run, out of `actions` (4.5) | to do (drops estimate runs) | to do (args become the call's arguments) |
+| `binding` over action, args with images by digest, tool version, config identity, session; `expires` (4.5) | to do | to do |
+| `_meta["table-manners/estimate"]` checked at the limits check: `stale_estimate` (4.5) | to do | to do |
+| `cap` and `budget` split; `max_spend_usd` above the configured cap is `invalid` (2.2, 4.5) | to do | to do |
+| `credential` for 401/403 and a missing key, never retryable (2.2) | to do | to do |
+| JSON-RPC refusal releases the `client_run_id` (4.4) | to do | to do |
+| renders: `kind`, URL-only stdout, stdin/SIGTERM lifetime, `--frame-ancestor` (3.2) | to do (`report view`, `report export`) | to do (`dash`) |
+| image slots `many` (10.1, 11.2) | to do (`references`) | n/a unless an action takes a list |
+| v0.3 fixtures (7, item 7) | to do | to do |
 
 ## v0.2 (run association and the session)
 
