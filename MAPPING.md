@@ -12,21 +12,22 @@ is under way in its milestone 8. The squint column below is the starting point, 
 
 ## v0.2 (run association and the session)
 
-rascal's side is built on its branch `m11-table-manners-v02` (milestone M11), against this draft
-by path; its fixtures are in `fixtures/rascal/`.
+Both tools build against this draft by path: rascal on its branch `m11-table-manners-v02`
+(milestone M11), squint on `m8-v0.2` (milestone M8, `0e54848`). Their fixtures are in
+`fixtures/rascal/` and `fixtures/squint/`.
 
 | contract | squint | rascal |
 |---|---|---|
-| `run.session_id`, `run.client_run_id` on results and runs entries; persisted at allocation | add | done (M11) |
-| progress `_meta` `table-manners/run` on every notification from allocation; no run in `message` | change | done (M11) |
-| `_meta["table-manners/client_run_id"]`, claimed at acceptance; `-32602` `client_run_id_reused` with the earlier run | add | done (M11) |
-| `<tool>://runs{?cursor}` with `next_cursor` | add | done (M11) |
-| reserve at the limits check, settle at the end | add | done (M9) |
-| not sent / known / unresolved; `spend.unresolved_usd` | add | done (M11) |
-| `<tool>://session` with a UUID v4 id | add | done (M11) |
+| `run.session_id`, `run.client_run_id` on results and runs entries; persisted at allocation | done (8.3) | done (M11) |
+| progress `_meta` `table-manners/run` on every notification from allocation; no run in `message` | done (8.3) | done (M11) |
+| `_meta["table-manners/client_run_id"]`, claimed at acceptance; `-32602` `client_run_id_reused` with the earlier run | done (8.3) | done (M11) |
+| `<tool>://runs{?cursor}` with `next_cursor` | done (8.5) | done (M11) |
+| reserve at the limits check, settle at the end | done (8.4) | done (M9) |
+| not sent / known / unresolved; `spend.unresolved_usd` | done (8.4) | done (M11) |
+| `<tool>://session` with a UUID v4 id | done (8.2) | done (M11) |
 | describe, estimates, reads and cancel never wait on the execution permit | done (`m7-review`) | done (M9) |
 | permit wait cancellable; a cancel before allocation leaves no run | done (`m7-review`) | done (M11) |
-| no private session fields in the estimate body | change | done (M11) |
+| no private session fields in the estimate body | done (8.2) | done (M11) |
 
 ## Locations
 

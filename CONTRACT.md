@@ -1,9 +1,8 @@
 # table-manners, v0.2.0
 
-Status: v0.2.0 draft, 2026-10-31. v0.1.0 (2026-10-30) plus run association and the session
-ledger, as squint and rascal agreed them (PROPOSALS.md, C4; "Changes from v0.1" below). Field
-names and the schemas become binding at the `v0.2.0` tag, which waits for both tools' fixtures to
-validate (7).
+Status: v0.2.0, ready to tag, 2026-11-01. v0.1.0 (2026-10-30) plus run association and the
+session ledger, as squint and rascal agreed them (PROPOSALS.md, C4; "Changes from v0.1" below).
+Both tools' fixtures validate (7); field names and the schemas are binding at the `v0.2.0` tag.
 
 table-manners is the contract the waffle tools keep at a shared table: one external interface for
 squint (checks an image against what was asked), rascal (finds, masks and composites regions),

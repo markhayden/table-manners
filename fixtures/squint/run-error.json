@@ -7,7 +7,7 @@
     "verdict": null
   },
   "cache": "off",
-  "contract": "0.1.0",
+  "contract": "0.2.0",
   "duration_ms": 0,
   "error": {
     "code": "provider",
@@ -44,19 +44,22 @@
     ],
     "out": []
   },
-  "input_identity": "sha256:69159fd4fc5e57b2d9fb7b6b7bea32ed7251263f4217aac08aaa420e02f8bea4",
+  "input_identity": "sha256:2c8f848817c2fa139d21026d2f69f6e0dd8f5a2d1d2ac4f7ec3e23bdd9a1e585",
   "locations": {
     "found": [],
     "used": []
   },
   "notes": [],
   "run": {
+    "client_run_id": null,
     "dir": "/runs/error",
     "id": "error",
-    "resource": "squint://run/error/run.json"
+    "resource": "squint://run/error/run.json",
+    "session_id": null
   },
   "spend": {
     "basis": "measured",
+    "unresolved_usd": 0.0210054,
     "usd": 0.0210054
   },
   "started": "2026-01-01T00:00:00.000Z",
