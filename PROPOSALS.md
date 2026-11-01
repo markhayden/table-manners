@@ -207,3 +207,9 @@ requirement; a `file` may be `valid` when its digest was checked in the session;
 placeholders are whole arguments only and a render never modifies the run directory (3.2); a
 command-line estimate has null `session_id` and `session`; the binding leaves out
 `return_images` and `image_blocks`; any tool MAY serve `estimate`, one that may spend MUST (4.5).
+
+From squint's M9 plan: a call that needs a missing or invalid requirement is refused before any
+run with the `not_ready` refusal naming the requirements (3.1); an estimate that cannot be priced
+is `refused: "readiness"` with `worst_case_usd` and, without configuration, `config_identity`
+null; a configuration is `present` when it loads, `invalid` when it does not parse; a server
+render exits 0 on stdin EOF or SIGTERM (3.2).

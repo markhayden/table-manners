@@ -1,0 +1,12 @@
+{
+  "reason": "not_ready",
+  "run": null,
+  "requirements": [
+    {
+      "kind": "config",
+      "name": "squint.toml",
+      "state": "missing",
+      "setup": "Start squint with --config <path>."
+    }
+  ]
+}

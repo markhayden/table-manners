@@ -510,8 +510,12 @@ pub struct Session {
 pub struct Refusal {
     /// Why.
     pub reason: RefusalReason,
-    /// The earlier request's run; none while it has none.
+    /// `client_run_id_reused`: the earlier request's run, none while it has none;
+    /// `not_ready`: none.
     pub run: Option<RunRef>,
+    /// `not_ready`: the requirements the call needs that are missing or invalid.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub requirements: Option<Vec<Requirement>>,
 }
 
 /// The refusals the contract names.
@@ -520,6 +524,8 @@ pub struct Refusal {
 pub enum RefusalReason {
     /// The request's `client_run_id` was already used in this session.
     ClientRunIdReused,
+    /// The call needs a requirement that is missing or invalid (3.1).
+    NotReady,
 }
 
 /// What the reserved `estimate` tool returns (4.5): the worst case of one exact call, bound to
@@ -539,8 +545,8 @@ pub struct Estimate {
     pub session_id: Option<String>,
     /// What the call would use where its arguments leave the choice to the tool.
     pub effective: Effective,
-    /// What the limits check would reserve.
-    pub worst_case_usd: f64,
+    /// What the limits check would reserve; none only when the call cannot be priced.
+    pub worst_case_usd: Option<f64>,
     /// The effective per-call cap; none when uncapped, never a zero allowance.
     pub cap_usd: Option<f64>,
     /// Whether the limits check would pass now.
@@ -560,8 +566,8 @@ pub struct Estimate {
 pub struct Effective {
     /// The model or endpoint; none when the action calls none.
     pub model: Option<String>,
-    /// `sha256:<hex>` of the configuration in force.
-    pub config_identity: String,
+    /// `sha256:<hex>` of the configuration in force; none when there is no configuration.
+    pub config_identity: Option<String>,
     /// `x-<tool>` keys: the tool's own.
     #[serde(flatten)]
     pub extensions: BTreeMap<String, serde_json::Value>,

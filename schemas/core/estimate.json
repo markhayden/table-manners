@@ -75,8 +75,16 @@
           "minLength": 1
         },
         "config_identity": {
-          "type": "string",
-          "pattern": "^sha256:[0-9a-f]{64}$"
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "type": "string",
+              "pattern": "^sha256:[0-9a-f]{64}$"
+            }
+          ],
+          "description": "Null only when there is no configuration."
         }
       },
       "patternProperties": {
@@ -84,7 +92,15 @@
       }
     },
     "worst_case_usd": {
-      "$ref": "#/$defs/usd"
+      "oneOf": [
+        {
+          "type": "null"
+        },
+        {
+          "$ref": "#/$defs/usd"
+        }
+      ],
+      "description": "What the limits check would reserve; null only when the call cannot be priced (refused for readiness), never a made-up zero."
     },
     "cap_usd": {
       "oneOf": [
@@ -178,6 +194,31 @@
         "properties": {
           "session": {
             "type": "object"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "not": {
+          "properties": {
+            "refused": {
+              "const": "readiness"
+            }
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "worst_case_usd": {
+            "type": "number"
+          },
+          "effective": {
+            "properties": {
+              "config_identity": {
+                "type": "string"
+              }
+            }
           }
         }
       }

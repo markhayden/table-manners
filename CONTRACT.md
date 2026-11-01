@@ -218,11 +218,15 @@ action, what stands between the action and a run:
   secret, such as a model directory), `model` (a model or endpoint the action calls, as
   configured), `file` (a local file it needs, such as model weights) or `dependency` (a helper
   program or library).
-- An action's readiness describes its default use. A call fails for a requirement only when that
-  call needs it: a call that needs a `missing` or `invalid` requirement fails `invalid`
-  (`usage`) naming it, or `credential` (2.2) for a credential, and spends nothing; a call that
-  does not (an action whose filler is optional, called without one) runs. An estimate's
-  `readiness` (4.5) is the call's own.
+- An action's readiness describes its default use. A call is refused for a requirement only when
+  that call needs it: a call that needs a `missing` or `invalid` requirement is refused before
+  any run, as a JSON-RPC error `-32602` with `data` `{"reason": "not_ready", "run": null,
+  "requirements": [...]}` (`schemas/core/refusal.json`) naming what it needs, so it writes no run,
+  spends nothing and releases its `client_run_id` (4.4). A call that does not need it (an action
+  whose filler is optional, called without one) runs. A provider that rejects a credential during
+  a run is `credential` (2.2). An estimate's `readiness` (4.5) is the call's own.
+- A configuration is `present` when it loads and `invalid` when it does not parse. The names in
+  the examples here are illustrative; each tool names its own files, variables and commands.
 - A requirement's `state`:
 
   | state | meaning |
@@ -238,8 +242,8 @@ action, what stands between the action and a run:
   already had, so a fresh session shows `present` until a real call settles it.
 - `name` is a variable, file or entry name; `setup` is a sentence a person can act on. Neither
   ever carries a credential value, and a tool MUST NOT print one.
-- A credential a call needs and does not have is not a provider call: the run fails with
-  `credential` (2.2) and spends nothing.
+- A credential a call needs and does not have is not a provider call: the call is refused
+  `not_ready` before any run.
 
 ### 3.2 Renders
 
@@ -255,7 +259,8 @@ argument, and runs it without a shell. A render never modifies the run directory
   exits; the host owns the process. It allows framing only by the one origin given as
   `{frame_ancestor}` (`Content-Security-Policy: frame-ancestors <origin>`), never loopback in
   general; the host passes its own origin, for example `http://127.0.0.1:4801`.
-  `ready_timeout_s` (at most 60) bounds the wait for the URL line.
+  `ready_timeout_s` (at most 60) bounds the wait for the URL line. It exits 0 when its stdin closes
+  or on SIGTERM.
 - A render that exits non-zero, or prints no line in time, failed to start. Its stderr is for
   people. A failed render never changes the run's status.
 - Renders need a local run directory. A run whose `run.dir` is null has no render.
@@ -421,7 +426,9 @@ It answers with an estimate (`schemas/core/estimate.json`) as `structuredContent
 - `effective` names what the call would use where the arguments leave a choice to the tool:
   `model` (null when the action calls none) and `config_identity`, a digest of the configuration
   in force. A tool MAY add fields under `x-<tool>`.
-- `worst_case_usd` is what the limits check would reserve. `cap_usd` is the effective per-call cap
+- `worst_case_usd` is what the limits check would reserve. When the call cannot be priced (no
+  configuration, no model), the estimate is `refused: "readiness"` with `worst_case_usd` null and,
+  without a configuration, `effective.config_identity` null; never a made-up zero. `cap_usd` is the effective per-call cap
   (the configured cap lowered by `max_spend_usd`), null when uncapped; null is never zero.
 - `allowed` is whether the limits check would pass right now. When it is false, `refused` is
   `cap`, `budget` or `readiness` (the action is not `ready`); otherwise null.
@@ -486,16 +493,17 @@ Lifted from `rascal serve` (rascal ADR 0015).
   may spend (4.5); each action tool's input schema is its action's `params_schema` with the
   arguments its profiles add. `estimate`'s input is `{action, arguments}` (4.5).
 - `<tool> serve` accepts `--config <path>` (4.6) and, like `describe`, starts without a
-  configuration: its actions then report `needs_setup` and a call to one fails with `invalid`
-  (`usage`) naming what is missing. A server MUST NOT require an
-  injected context object: a client needs nothing but the description.
+  configuration: its actions then report `needs_setup`, and a call that needs what is missing is
+  refused `not_ready` (3.1).
+- A server MUST NOT require an injected context object: a client needs nothing but the
+  description.
 - Once a run exists, every outcome is an MCP tool result carrying the header and body as
   `structuredContent`: `isError: false` for `completed`, `isError: true` for `invalid` and
   `error`. The header is the point: spend to date, `retryable` and salvaged outputs (2.3) travel
   only in a result, and a JSON-RPC error reaches a model client as an opaque failure.
 - JSON-RPC errors are reserved for failures before a run exists: an unknown tool, arguments the MCP
-  layer rejects against the input schema, a reused `client_run_id` (4.4), the server itself
-  failing. A refusal the contract names carries `data.reason` (`schemas/core/refusal.json`) so a
+  layer rejects against the input schema, a reused `client_run_id` (4.4), a call that is not ready
+  (3.1), the server itself failing. A refusal the contract names carries `data.reason` (`schemas/core/refusal.json`) so a
   host can tell it from other invalid params. Such an error releases the request's
   `client_run_id` (4.4).
 - The contract's request and notification metadata lives in MCP's `_meta` under keys prefixed
@@ -560,7 +568,7 @@ Breaking, as a minor before 1.0 may be (1):
 - `budget` covers the session only; the per-call cap is `cap` (2.2).
 - A request refused with a JSON-RPC error releases its `client_run_id` (4.4).
 
-Added: error codes `credential`, `cap` and `stale_estimate` (2.2); estimate binding with
+Added: the `not_ready` refusal (3.1); error codes `credential`, `cap` and `stale_estimate` (2.2); estimate binding with
 `_meta["table-manners/estimate"]` (4.5); configuration owned by the session and chosen by
 `--config` (4.6); image slots that take a list (`many`, 10.1, 11.2).
 
