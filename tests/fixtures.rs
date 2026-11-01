@@ -1,8 +1,9 @@
 //! Each tool's conformance fixtures (CONTRACT.md 7, item 7) are valid against the schemas and
 //! read into the Rust types: `fixtures/<tool>/describe.json` a description, every `run-*.json`
 //! a result, every `runs*.json` a runs page, `session.json` a session and every `refusal-*.json`
-//! a reuse refusal's data. The tool generates them from its own code and keeps its
-//! copy current in its own CI; here they are held to the contract.
+//! a reuse refusal's data; every dollar amount has at most six decimals (4.6). The tool
+//! generates them from its own code and keeps its copy current in its own CI; here they are held
+//! to the contract.
 
 use std::path::{Path, PathBuf};
 
@@ -35,6 +36,37 @@ fn validator(id: &str) -> jsonschema::Validator {
 
 fn read(path: &Path) -> serde_json::Value {
     serde_json::from_str(&std::fs::read_to_string(path).expect("fixture")).expect("JSON")
+}
+
+/// Every dollar amount (`usd` or a key ending `_usd`) has at most six decimals (4.6), which the
+/// schemas cannot say.
+fn six_decimals(path: &Path, key: &str, value: &serde_json::Value) {
+    match value {
+        serde_json::Value::Object(map) => {
+            for (k, v) in map {
+                six_decimals(path, k, v);
+            }
+        }
+        serde_json::Value::Array(items) => {
+            for v in items {
+                six_decimals(path, key, v);
+            }
+        }
+        serde_json::Value::Number(n) if key == "usd" || key.ends_with("_usd") => {
+            let text = n.to_string();
+            let decimals = match text.split_once('.') {
+                _ if text.contains(['e', 'E']) => usize::MAX,
+                Some((_, fraction)) => fraction.len(),
+                None => 0,
+            };
+            assert!(
+                decimals <= 6,
+                "{}: {key} is {text}, more than six decimals",
+                path.display()
+            );
+        }
+        _ => {}
+    }
 }
 
 fn valid(validator: &jsonschema::Validator, path: &Path, doc: &serde_json::Value) {
@@ -74,6 +106,7 @@ fn every_tools_fixtures_hold_to_the_contract() {
                 .to_string_lossy()
                 .into_owned();
             let doc = read(&path);
+            six_decimals(&path, "", &doc);
             if file == "describe.json" {
                 valid(&description, &path, &doc);
                 let d: Description = serde_json::from_value(doc).expect("a Description");
