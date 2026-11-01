@@ -13,7 +13,7 @@ is under way in its milestone 8. The squint column below is the starting point, 
 ## v0.2 (run association and the session)
 
 Both tools build against this draft by path: rascal on its branch `m11-table-manners-v02`
-(milestone M11), squint on `m8-v0.2` (milestone M8, `0e54848`). Their fixtures are in
+(milestone M11), squint on `m8-v0.2` (milestone M8, `6fef419`). Their fixtures are in
 `fixtures/rascal/` and `fixtures/squint/`.
 
 | contract | squint | rascal |
