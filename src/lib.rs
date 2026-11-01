@@ -192,8 +192,8 @@ pub enum ErrorCode {
     Io,
     /// A remote model or service failed.
     Provider,
-    /// A provider rejected the credential (401 or 403), or a needed one was missing; never
-    /// retryable.
+    /// A provider rejected the credential (401 or 403) during the run; never retryable. A
+    /// credential missing before the run is the `not_ready` refusal.
     Credential,
     /// The call's worst case is over its effective per-call cap (4.5).
     Cap,

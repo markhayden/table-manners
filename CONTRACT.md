@@ -113,7 +113,7 @@ Present exactly when `status` is `error` or `invalid`, and null otherwise:
 | `io` | error | reading or writing the tool's own files failed |
 | `stale_estimate` | invalid | the call named an estimate (4.5) that no longer matches it: other inputs, configuration, tool version or session, or past its `expires` |
 | `provider` | error | a remote model or service failed (a judge model, a filler endpoint) |
-| `credential` | error | a provider rejected the credential (HTTP 401 or 403), or a credential the action needs was missing when the call reached it; never retryable |
+| `credential` | error | a provider rejected the credential (HTTP 401 or 403) during the run; never retryable (a credential missing before the run is the `not_ready` refusal, 3.1) |
 | `cap` | error | the call's worst case is over its effective per-call cap (4.5) |
 | `budget` | error | the session budget cannot reserve the call's worst case (4.5) |
 | `timeout` | error | a bounded wait ran out |
