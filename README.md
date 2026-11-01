@@ -10,7 +10,7 @@ A **core** covers every tool: results, self-description, long runs, the MCP serv
 **Profiles** add what a kind of tool needs; v0.1 has one, **images**, which squint and rascal
 implement.
 
-- [`CONTRACT.md`](CONTRACT.md): the specification (v0.2.0 draft; v0.1.0 is the latest tag).
+- [`CONTRACT.md`](CONTRACT.md): the specification, v0.2.0 (tagged and on crates.io).
 - [`schemas/`](schemas): the JSON Schemas, the source of truth: `core/` for every tool, `images/`
   for the images profile.
 - [`examples/`](examples): valid and invalid documents for each schema.
