@@ -1,0 +1,28 @@
+{
+  "contract": "0.2.0",
+  "tool": {
+    "name": "rascal",
+    "version": "0.1.0"
+  },
+  "runs": [
+    {
+      "id": "r-8c1f",
+      "resource": "rascal://run/r-8c1f/run.json",
+      "session_id": "0b7e3c5a-6f1d-4c2e-9a8b-3d4e5f6a7b8c",
+      "client_run_id": "host-7f3a.attempt:2",
+      "action": "remove",
+      "status": "running",
+      "started": "2026-10-30T19:12:00.000Z"
+    },
+    {
+      "id": "r-8c1e",
+      "resource": "rascal://run/r-8c1e/run.json",
+      "session_id": "0b7e3c5a-6f1d-4c2e-9a8b-3d4e5f6a7b8c",
+      "client_run_id": null,
+      "action": "remove",
+      "status": "error",
+      "started": "2026-10-30T19:09:42.118Z"
+    }
+  ],
+  "next_cursor": "eyJzIjoiMjAyNi0xMC0zMFQxOTowOTo0Mi4xMThaIiwiaSI6InItOGMxZSJ9+/=="
+}

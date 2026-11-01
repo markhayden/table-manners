@@ -1,5 +1,5 @@
 {
-  "contract": "0.1.0",
+  "contract": "0.2.0",
   "tool": {
     "name": "squint",
     "version": "0.2.0"
@@ -8,6 +8,8 @@
   "run": {
     "id": "decision-1793386884140-53022",
     "resource": "squint://run/decision-1793386884140-53022/run.json",
+    "session_id": "0b7e3c5a-6f1d-4c2e-9a8b-3d4e5f6a7b8c",
+    "client_run_id": null,
     "dir": "/abs/squint-out/decision-1793386884140-53022"
   },
   "status": "error",
@@ -22,6 +24,7 @@
   "input_identity": "sha256:7777777777777777777777777777777777777777777777777777777777777777",
   "spend": {
     "usd": 0.0389,
+    "unresolved_usd": 0,
     "basis": "measured"
   },
   "cache": "miss",
