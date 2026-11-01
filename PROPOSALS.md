@@ -124,18 +124,19 @@ CONTRACT.md and the schemas at a tag.
 7. **Reserve, then settle.** The limits check reserves the call's worst case into
    `reserved_usd` in the same atomic step; the run's end settles it (8). This prevents two
    concurrent calls passing the check against the same `spent_usd`.
-8. **Known charges are kept; unknown charges stay unknown.** A provider call is *not sent*
-   (refused before its request left the tool: no credential, connection refused), *known* (the
-   provider answered: success, authentication rejected, or a failure status that reports usage),
-   or *unresolved* (the request was sent and no answer settles it: cancelled or killed mid-call,
-   timed out, a failure status whose answer reports no usage). A not-sent call costs nothing and
-   releases its reservation. A known call counts the charge its answer reports; an answer that
-   refuses the request before any work (authentication rejected) counts zero; a successful answer
-   that reports no charge figure counts the tool's configured price for the call, and the run's
-   `spend.basis` is then `estimated`. An unresolved call counts its worst case. All of this holds
-   whatever the run's status. The result's `spend` adds `unresolved_usd` (the part of `usd` not
-   settled by an answer) and the session adds `unresolved_usd` (the part of `spent_usd`), so a
-   host shows "at most" rather than zero or a false exact figure.
+8. **Known charges are kept; unknown charges stay unknown.** A provider call is *not sent* (refused
+   before its request left the tool: no credential, connection refused), *known* (the provider
+   answered: success, authentication rejected, or a failure status that reports usage), or
+   *unresolved* (the request was sent and no answer settles it: cancelled or killed mid-call, timed
+   out, a failure status whose answer reports no usage). A not-sent call costs nothing and releases
+   its reservation. A known call counts the charge its answer reports, or the usage it reports
+   (tokens, images) at the tool's per-unit prices; either is `spend.basis: measured`; an answer
+   that refuses the request before any work (authentication rejected) counts zero; a successful
+   answer that reports neither a charge nor usage counts the tool's configured price for the call,
+   and the run's `spend.basis` is then `estimated`. An unresolved call counts its worst case. All
+   of this holds whatever the run's status. The result's `spend` adds `unresolved_usd` (the part of
+   `usd` not settled by an answer) and the session adds `unresolved_usd` (the part of `spent_usd`),
+   so a host shows "at most" rather than zero or a false exact figure.
 9. **Responsiveness while a run executes.** `describe`, local estimates, status, the session and
    every resource read, and cancellation MUST stay responsive while a run holds the execution
    permit. Execution concurrency itself does not depend on whether an action costs money.
