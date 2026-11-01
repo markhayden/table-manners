@@ -214,21 +214,27 @@ action, what stands between the action and a run:
 - `state` is `ready` (no requirement is `missing` or `invalid`), `needs_setup` (one is, and the
   person can fix it), or `unavailable` (this build or platform cannot run the action at all; a
   requirement says why).
-- A requirement's `kind` is `config`, `credential`, `model` (a model or endpoint the action
-  calls, as configured), `file` (a local file it needs, such as model weights) or `dependency`
-  (a helper program or library).
+- A requirement's `kind` is `config`, `credential`, `env` (a variable the tool reads that is not a
+  secret, such as a model directory), `model` (a model or endpoint the action calls, as
+  configured), `file` (a local file it needs, such as model weights) or `dependency` (a helper
+  program or library).
+- An action's readiness describes its default use. A call fails for a requirement only when that
+  call needs it: a call that needs a `missing` or `invalid` requirement fails `invalid`
+  (`usage`) naming it, or `credential` (2.2) for a credential, and spends nothing; a call that
+  does not (an action whose filler is optional, called without one) runs. An estimate's
+  `readiness` (4.5) is the call's own.
 - A requirement's `state`:
 
   | state | meaning |
   |---|---|
   | `missing` | not there: no such variable, file or config entry |
   | `present` | there, and not checked; finding a key never makes it `valid` |
-  | `valid` | a provider accepted it in this session (a known answer, 4.5, that was not a rejection) |
+  | `valid` | a provider accepted it in this session (a known answer, 4.5, that was not a rejection); for a `file`, the tool checked its digest in this session |
   | `invalid` | there and rejected: a provider answered 401 or 403 to it in this session, or the file or config entry does not parse |
   | `unknown` | the tool cannot tell (a credential held somewhere it does not inspect) |
 
 - Describing is a **local inspection**: it MUST NOT make a network call, start a paid step or
-  write a run. `valid` and `invalid` for a credential come only from provider answers the session
+  write a run. It need not hash large files: an unchecked file is `present`. `valid` and `invalid` for a credential come only from provider answers the session
   already had, so a fresh session shows `present` until a real call settles it.
 - `name` is a variable, file or entry name; `setup` is a sentence a person can act on. Neither
   ever carries a credential value, and a tool MUST NOT print one.
@@ -238,7 +244,8 @@ action, what stands between the action and a run:
 ### 3.2 Renders
 
 A render is a command that shows a run to a person. Its `command` is an argv; the host substitutes
-`{run.dir}` (the run directory) and, for a server, `{frame_ancestor}`, and runs it without a shell.
+`{run.dir}` (the run directory) and, for a server, `{frame_ancestor}`, each only where it is a whole
+argument, and runs it without a shell. A render never modifies the run directory.
 
 - `kind: "document"` writes a file and exits. Its only stdout is one line, the absolute path of
   what it wrote. Exit 0 means the path exists.
@@ -382,7 +389,7 @@ This is not exactly-once execution across processes: a new session forgets the i
 - Every result reports spend (2.3).
 
 **Estimates.** A tool with any action whose `cost.may_spend` is true serves the reserved MCP tool
-`estimate` (5) and the command `<tool> estimate --json`. Its arguments are the action's name and
+`estimate` (5) and the command `<tool> estimate --json`; any other tool MAY. Its arguments are the action's name and
 exactly the arguments the paid call would send:
 
 ```jsonc
@@ -408,7 +415,8 @@ It answers with an estimate (`schemas/core/estimate.json`) as `structuredContent
   below). It is a control request, not history; a host never shows it as an attempt.
 - `binding` is a digest the tool computes over the action, the arguments after resolving every
   image to its file digest (8.1), the tool version, the effective configuration
-  (`effective.config_identity`) and the session id. Its recipe is the tool's; two estimates with
+  (`effective.config_identity`) and the session id. Arguments that only choose how results are
+  delivered (the images profile's `return_images` and `image_blocks`, 10.2) are left out. Its recipe is the tool's; two estimates with
   equal bindings priced the same call.
 - `effective` names what the call would use where the arguments leave a choice to the tool:
   `model` (null when the action calls none) and `config_identity`, a digest of the configuration
@@ -418,7 +426,8 @@ It answers with an estimate (`schemas/core/estimate.json`) as `structuredContent
 - `allowed` is whether the limits check would pass right now. When it is false, `refused` is
   `cap`, `budget` or `readiness` (the action is not `ready`); otherwise null.
 - `session` is one atomic observation of the session (4.6), the same document as
-  `<tool>://session`.
+  `<tool>://session`. An estimate from the command line has no session: `session_id` and
+  `session` are null, and no server accepts its binding.
 - `expires` is when the tool stops honouring the binding (prices and catalogs change). It is the
   tool's choice, at most 24 hours after the estimate.
 

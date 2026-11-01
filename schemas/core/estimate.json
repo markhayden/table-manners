@@ -49,7 +49,15 @@
       "description": "Sent back as _meta[\"table-manners/estimate\"] on the paid call."
     },
     "session_id": {
-      "$ref": "urn:table-manners:core:run-ref#/$defs/session_id"
+      "oneOf": [
+        {
+          "type": "null"
+        },
+        {
+          "$ref": "urn:table-manners:core:run-ref#/$defs/session_id"
+        }
+      ],
+      "description": "Null for an estimate from the command line, which no server accepts."
     },
     "effective": {
       "type": "object",
@@ -104,7 +112,14 @@
       "$ref": "urn:table-manners:core:description#/$defs/readiness"
     },
     "session": {
-      "$ref": "urn:table-manners:core:session"
+      "oneOf": [
+        {
+          "type": "null"
+        },
+        {
+          "$ref": "urn:table-manners:core:session"
+        }
+      ]
     },
     "expires": {
       "type": "string",
@@ -142,5 +157,30 @@
       "type": "number",
       "minimum": 0
     }
-  }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "session_id": {
+            "type": "null"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "session": {
+            "type": "null"
+          }
+        }
+      },
+      "else": {
+        "properties": {
+          "session": {
+            "type": "object"
+          }
+        }
+      }
+    }
+  ]
 }

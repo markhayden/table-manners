@@ -563,6 +563,7 @@
           "enum": [
             "config",
             "credential",
+            "env",
             "model",
             "file",
             "dependency"

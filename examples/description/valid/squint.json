@@ -86,6 +86,11 @@
             "kind": "model",
             "name": "claude-sonnet-5-5",
             "state": "present"
+          },
+          {
+            "kind": "env",
+            "name": "SQUINT_MODEL_DIR",
+            "state": "present"
           }
         ]
       },

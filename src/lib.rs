@@ -367,6 +367,8 @@ pub enum RequirementKind {
     Config,
     /// A credential, by variable name.
     Credential,
+    /// A variable the tool reads that is not a secret.
+    Env,
     /// A model or endpoint the action calls, as configured.
     Model,
     /// A local file it needs, such as model weights.
@@ -533,8 +535,8 @@ pub struct Estimate {
     pub action: String,
     /// `sha256:<hex>`; sent back as `_meta["table-manners/estimate"]` on the paid call.
     pub binding: String,
-    /// The serving session the binding belongs to.
-    pub session_id: String,
+    /// The serving session the binding belongs to; none for a command-line estimate.
+    pub session_id: Option<String>,
     /// What the call would use where its arguments leave the choice to the tool.
     pub effective: Effective,
     /// What the limits check would reserve.
@@ -547,8 +549,8 @@ pub struct Estimate {
     pub refused: Option<EstimateRefusal>,
     /// The action's readiness (3.1).
     pub readiness: Readiness,
-    /// One atomic observation of the session (4.6).
-    pub session: Session,
+    /// One atomic observation of the session (4.6); none for a command-line estimate.
+    pub session: Option<Session>,
     /// When the tool stops honouring the binding.
     pub expires: String,
 }

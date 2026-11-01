@@ -198,3 +198,12 @@ corrected request under the same id is the case the id exists for. `run: null` o
 then means only a request still waiting for the permit or one cancelled before allocation.
 Fixtures: a refused request whose id is accepted on the retry, and a cancelled one whose id is
 still refused.
+
+## v0.3: questions settled while the tools planned it (2026-11-01)
+
+From rascal's M12 plan, decided by the coordinating session and written into CONTRACT.md:
+a call fails for a requirement only when it needs it (3.1); a non-secret variable is an `env`
+requirement; a `file` may be `valid` when its digest was checked in the session; render
+placeholders are whole arguments only and a render never modifies the run directory (3.2); a
+command-line estimate has null `session_id` and `session`; the binding leaves out
+`return_images` and `image_blocks`; any tool MAY serve `estimate`, one that may spend MUST (4.5).
