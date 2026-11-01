@@ -168,3 +168,23 @@ C4 does not wait on C1: if C1's shapes are not ready, C4 ships as v0.2 and C1 fo
 URL, no pid (the host owns the child), and framing is allowed only for one explicit host origin
 the host passes (for example `--frame-ancestor http://127.0.0.1:<port>`), never loopback in
 general.
+
+## For v0.3: a claim released when the request gets no run (squint's M8 review, 2026-11-01)
+
+**The case.** A client sends `client_run_id` X and the request is refused with a JSON-RPC error
+before any run exists: invalid params (a bad job or arguments) or a failed `roots/list`. The
+client fixes its arguments and retries with X, and gets `-32602 client_run_id_reused` with
+`run: null`. That reads as "the earlier request is still waiting, or was cancelled before a run",
+but there never was a run and there will not be one. Both tools claim at acceptance (4.2), so this
+is the contract's question, not either tool's bug.
+
+**Options.** (a) Release the claim when the request ends in a JSON-RPC error with no run; a
+cancellation keeps it claimed, as 4.2 says a claimed id stays claimed. (b) Keep it claimed and add
+a refusal reason or note so `run: null` cannot be read as "still waiting". (c) Document only: an id
+is single-use from acceptance, and a client uses a fresh one after any error.
+
+**Proposed: (a)**, squint and rascal agreeing. It is the smallest change, and a client retrying a
+corrected request under the same id is the case the id exists for. `run: null` on a reuse refusal
+then means only a request still waiting for the permit or one cancelled before allocation.
+Fixtures: a refused request whose id is accepted on the retry, and a cancelled one whose id is
+still refused.
