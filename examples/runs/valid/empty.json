@@ -1,8 +1,9 @@
 {
-  "contract": "0.1.0",
+  "contract": "0.2.0",
   "tool": {
     "name": "rascal",
     "version": "0.1.0"
   },
-  "runs": []
+  "runs": [],
+  "next_cursor": null
 }

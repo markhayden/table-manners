@@ -1,11 +1,12 @@
 //! Each tool's conformance fixtures (CONTRACT.md 7, item 7) are valid against the schemas and
 //! read into the Rust types: `fixtures/<tool>/describe.json` a description, every `run-*.json`
-//! a result, `runs.json` a runs list. The tool generates them from its own code and keeps its
+//! a result, every `runs*.json` a runs page, `session.json` a session and every `refusal-*.json`
+//! a reuse refusal's data. The tool generates them from its own code and keeps its
 //! copy current in its own CI; here they are held to the contract.
 
 use std::path::{Path, PathBuf};
 
-use table_manners::{Description, RunResult, RunsList, SCHEMAS};
+use table_manners::{Description, Refusal, RunResult, RunsList, SCHEMAS, Session};
 
 struct Embedded;
 
@@ -47,6 +48,8 @@ fn every_tools_fixtures_hold_to_the_contract() {
     let description = validator("urn:table-manners:core:description");
     let result = validator("urn:table-manners:core:result");
     let runs = validator("urn:table-manners:core:runs");
+    let session = validator("urn:table-manners:core:session");
+    let refusal = validator("urn:table-manners:core:refusal");
     let mut tools: Vec<PathBuf> = std::fs::read_dir(&root)
         .expect("fixtures/")
         .map(|e| e.expect("entry").path())
@@ -80,9 +83,17 @@ fn every_tools_fixtures_hold_to_the_contract() {
                 let r: RunResult = serde_json::from_value(doc).expect("a RunResult");
                 assert_eq!(r.tool.name, name, "{}: the tool's own name", path.display());
                 results += 1;
-            } else if file == "runs.json" {
+            } else if file.starts_with("runs") {
                 valid(&runs, &path, &doc);
-                let _: RunsList = serde_json::from_value(doc).expect("a RunsList");
+                let l: RunsList = serde_json::from_value(doc).expect("a RunsList");
+                assert_eq!(l.tool.name, name, "{}: the tool's own name", path.display());
+            } else if file == "session.json" {
+                valid(&session, &path, &doc);
+                let s: Session = serde_json::from_value(doc).expect("a Session");
+                assert_eq!(s.tool.name, name, "{}: the tool's own name", path.display());
+            } else if file.starts_with("refusal-") {
+                valid(&refusal, &path, &doc);
+                let _: Refusal = serde_json::from_value(doc).expect("a Refusal");
             } else {
                 panic!("{}: not a fixture this test knows", path.display());
             }

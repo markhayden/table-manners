@@ -1,8 +1,11 @@
-# Proposed for v0.2
+# Proposals
 
 Changes the tools' conformance work found the contract needs. Each names who found it and the
-evidence; none is binding until it lands in CONTRACT.md and the schemas at a tag. v0.2 is cut before
-rascal's conformance merges (CONTRACT.md 1).
+evidence; none is binding until it lands in CONTRACT.md and the schemas at a tag.
+
+**v0.2 carries C4 only** (run association and budget sessions, below), drafted into CONTRACT.md
+sections 2.3, 4 and 4.6 and the schemas `run-ref`, `session` and `refusal`. Items 1 to 5 from
+squint's conformance stay proposed for v0.3 with C1 (readiness).
 
 ## From squint's conformance (M7, 2026-10-31)
 

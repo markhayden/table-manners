@@ -12,7 +12,7 @@ use serde::{Deserialize, Serialize};
 pub mod images;
 
 /// The contract version this crate describes; every result and description carries it.
-pub const CONTRACT_VERSION: &str = "0.1.0";
+pub const CONTRACT_VERSION: &str = "0.2.0";
 
 /// Every schema as `($id, text)`. References between them use the `$id`s, so a validator needs a
 /// retriever that serves this list and nothing else.
@@ -44,6 +44,18 @@ pub const SCHEMAS: &[(&str, &str)] = &[
     (
         "urn:table-manners:core:runs",
         include_str!("../schemas/core/runs.json"),
+    ),
+    (
+        "urn:table-manners:core:run-ref",
+        include_str!("../schemas/core/run-ref.json"),
+    ),
+    (
+        "urn:table-manners:core:session",
+        include_str!("../schemas/core/session.json"),
+    ),
+    (
+        "urn:table-manners:core:refusal",
+        include_str!("../schemas/core/refusal.json"),
     ),
 ];
 
@@ -105,7 +117,22 @@ pub struct Tool {
     pub version: String,
 }
 
-/// Where a run lives.
+/// A run's identity (4.3): progress `_meta` under `table-manners/run`, and inside a reuse
+/// [`Refusal`].
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct RunRef {
+    /// Unique per tool.
+    pub id: String,
+    /// `<tool>://run/<id>/run.json`.
+    pub resource: String,
+    /// The serving session (4.6); none for a run made outside one (a tool's CLI).
+    pub session_id: Option<String>,
+    /// The caller's correlation id (4.4); none when the request sent none.
+    pub client_run_id: Option<String>,
+}
+
+/// Where a run lives: its [`RunRef`] fields and its directory.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct Run {
@@ -113,6 +140,10 @@ pub struct Run {
     pub id: String,
     /// `<tool>://run/<id>/run.json`.
     pub resource: String,
+    /// The serving session (4.6); none for a run made outside one (a tool's CLI).
+    pub session_id: Option<String>,
+    /// The caller's correlation id (4.4); none when the request sent none.
+    pub client_run_id: Option<String>,
     /// The run directory on a local transport, else none.
     pub dir: Option<String>,
 }
@@ -171,6 +202,8 @@ pub enum ErrorCode {
 pub struct Spend {
     /// US dollars, including a cancelled or failed run's spend to date; 0 for a cache hit.
     pub usd: f64,
+    /// The part of `usd` no provider answer settled (4.5): an upper bound, not a charge.
+    pub unresolved_usd: f64,
     /// How the figure was obtained.
     pub basis: SpendBasis,
 }
@@ -179,7 +212,7 @@ pub struct Spend {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum SpendBasis {
-    /// Metered by the provider.
+    /// Reported by the provider, as a charge or as usage priced per unit.
     Measured,
     /// From a configured price.
     Estimated,
@@ -297,7 +330,7 @@ pub struct Render {
     pub command: Vec<String>,
 }
 
-/// The `<tool>://runs` resource (4.3).
+/// A page of the `<tool>://runs{?cursor}` resource (4.3).
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct RunsList {
@@ -305,8 +338,10 @@ pub struct RunsList {
     pub contract: String,
     /// The tool.
     pub tool: Tool,
-    /// Recent runs, newest first.
+    /// Runs, newest first.
     pub runs: Vec<RunSummary>,
+    /// Opaque; the next page is `<tool>://runs?cursor=<next_cursor>`. None on the last page.
+    pub next_cursor: Option<String>,
 }
 
 /// One run in the list.
@@ -315,14 +350,18 @@ pub struct RunsList {
 pub struct RunSummary {
     /// The run's id.
     pub id: String,
+    /// `<tool>://run/<id>/run.json`.
+    pub resource: String,
+    /// The serving session (4.6); none for a run made outside one.
+    pub session_id: Option<String>,
+    /// The caller's correlation id (4.4); none when the request sent none.
+    pub client_run_id: Option<String>,
     /// The action's name.
     pub action: String,
     /// Where it is.
     pub status: RunState,
     /// RFC 3339, UTC.
     pub started: String,
-    /// `<tool>://run/<id>/run.json`.
-    pub resource: String,
 }
 
 /// A listed run's state: a result's status, or still running.
@@ -339,4 +378,46 @@ pub enum RunState {
     Error,
     /// See [`Status::Invalid`].
     Invalid,
+}
+
+/// The `<tool>://session` resource (4.6): one atomic observation of the serving process's ledger.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct Session {
+    /// The contract version the tool conforms to.
+    pub contract: String,
+    /// The tool.
+    pub tool: Tool,
+    /// A random UUID (v4), generated when the server starts.
+    pub id: String,
+    /// RFC 3339, UTC.
+    pub started: String,
+    /// The session budget; none when uncapped.
+    pub budget_usd: Option<f64>,
+    /// Settled spend, `unresolved_usd` included.
+    pub spent_usd: f64,
+    /// The part of `spent_usd` no provider answer settled.
+    pub unresolved_usd: f64,
+    /// Worst cases held by runs still going.
+    pub reserved_usd: f64,
+    /// `max(0, budget_usd - spent_usd - reserved_usd)`; none exactly when `budget_usd` is.
+    pub remaining_usd: Option<f64>,
+}
+
+/// The `data` of a JSON-RPC `-32602` error the contract names (4.4).
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct Refusal {
+    /// Why.
+    pub reason: RefusalReason,
+    /// The earlier request's run; none while it has none.
+    pub run: Option<RunRef>,
+}
+
+/// The refusals the contract names.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum RefusalReason {
+    /// The request's `client_run_id` was already used in this session.
+    ClientRunIdReused,
 }

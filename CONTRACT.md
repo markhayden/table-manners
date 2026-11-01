@@ -1,7 +1,9 @@
-# table-manners, v0.1.0
+# table-manners, v0.2.0
 
-Status: v0.1.0, 2026-10-30, reviewed from both squint's and rascal's sides. Field names and the
-schemas are binding at this tag.
+Status: v0.2.0 draft, 2026-10-31. v0.1.0 (2026-10-30) plus run association and the session
+ledger, as squint and rascal agreed them (PROPOSALS.md, C4; "Changes from v0.1" below). Field
+names and the schemas become binding at the `v0.2.0` tag, which waits for both tools' fixtures to
+validate (7).
 
 table-manners is the contract the waffle tools keep at a shared table: one external interface for
 squint (checks an image against what was asked), rascal (finds, masks and composites regions),
@@ -29,8 +31,8 @@ Sources: squint ADR 0018 and SPEC "External interface"; rascal's seed section in
 
 ## 1. Scope, versioning and profiles
 
-- The core defines the **result** (2), the **description document** (3), **long runs** (4), the
-  **MCP server conventions** (5), **exit codes** (6) and what a conforming tool provides (7). The
+- The core defines the **result** (2), the **description document** (3), **long runs** (4)
+  with the **session** (4.6), the **MCP server conventions** (5), **exit codes** (6) and what a conforming tool provides (7). The
   images profile defines the **image reference** (8), the **location** (9), how images enter and
   leave a tool (10), and what it adds to the result and the description (11).
 - A **profile** is a named set of additions to the core's objects. A tool lists the profiles it
@@ -51,8 +53,9 @@ Sources: squint ADR 0018 and SPEC "External interface"; rascal's seed section in
   major one may. Every result and description carries `contract` (the version the tool conforms
   to). A tool pins one release, keeps a hash-checked copy of its schemas, and SHOULD warn in CI
   when a newer tag exists; an update is a deliberate commit in the tool.
-- v0.1 is the minimum the chain needs. squint's conformance is expected to find what it gets wrong
-  about long paid runs; v0.2 follows before rascal's conformance merges.
+- v0.1 was the minimum the chain needs. v0.2 adds what squint's conformance and the playground's
+  review found about long paid runs: a run a client can correlate, and a spend ledger it can
+  observe. The other proposals in `PROPOSALS.md` follow in later minors.
 
 ## 2. The result
 
@@ -63,10 +66,11 @@ while the tool may still be running. A **header** the contract owns and a **body
 
 ```jsonc
 {
-  "contract": "0.1.0",
+  "contract": "0.2.0",
   "tool": { "name": "squint", "version": "0.2.0" },
   "action": "check",
   "run": { "id": "decision-1793386884140-53022", "resource": "squint://run/decision-…/run.json",
+           "session_id": "0b7e3c5a-6f1d-4c2e-9a8b-3d4e5f6a7b8c", "client_run_id": "host-7f3a.attempt:1",
            "dir": "/abs/squint-out/decision-…" },
   "status": "completed",
   "error": null,
@@ -74,7 +78,7 @@ while the tool may still be running. A **header** the contract owns and a **body
   "finished": "2026-10-30T19:10:21.904Z",
   "duration_ms": 39786,
   "input_identity": "sha256:…",
-  "spend": { "usd": 0.0389, "basis": "measured" },
+  "spend": { "usd": 0.0389, "unresolved_usd": 0, "basis": "measured" },
   "cache": "miss",
   "notes": [ "repair: the first submission omitted item C3; repaired in one turn" ],
   "body": { …the tool's own… }
@@ -114,13 +118,18 @@ Present exactly when `status` is `error` or `invalid`, and null otherwise:
 
 ### 2.3 The rest of the header
 
-- `run.id` is unique per tool; `run.resource` names the run resource (4.3); `run.dir` is the run
-  directory when the transport is local, else null.
+- `run` is the run's reference (4.3) plus `dir`: `run.id` is unique per tool, `run.resource`
+  names the run resource, `run.session_id` the serving session (4.6) and `run.client_run_id` the
+  caller's correlation id (4.4). `run.dir` is the run directory when the transport is local, else
+  null. All five are required; the nullable ones are null, never absent.
 - `input_identity`: a digest the tool computes over its resolved inputs and parameters, so two
   results with equal identities ran the same thing. Its recipe is the tool's.
-- `spend.basis` is `measured` (metered by the provider) or `estimated` (a configured price).
-  `spend.usd` is what this run cost, including a cancelled or failed run's spend to date; 0 for a
-  cache hit.
+- `spend.usd` is what this run cost by the accounting in 4.5, including a cancelled or failed
+  run's spend to date; 0 for a cache hit. `spend.unresolved_usd` is the part of it no provider
+  answer settled: an upper bound, so a client shows "at most", never zero or an exact figure.
+  `spend.basis` describes the settled part: `measured` when every known call's figure came from
+  its answer (a charge, or usage priced per unit), `estimated` when any known call counts a
+  configured price. The unsettled part is marked by `unresolved_usd`, not by `basis`.
 - `cache`: `hit`, `miss` or `off`.
 - `notes`: human sentences for caveats on a run that still completed (a repair, a tool's refusal,
   a location clipped at the edge, an override applied).
@@ -150,7 +159,8 @@ Present exactly when `status` is `error` or `invalid`, and null otherwise:
     }
   ],
   "progress_interval_s": 10,
-  "resources": [ "squint://runs", "squint://run/{id}/run.json", "squint://run/{id}/journal" ],
+  "resources": [ "squint://runs{?cursor}", "squint://run/{id}/run.json", "squint://run/{id}/journal",
+                 "squint://session" ],
   "x-squint": { }
   // the images profile adds "vocabulary" and "limits" (11.2)
 }
@@ -181,9 +191,19 @@ on a repeated value. A run with a step count reports steps done; a heartbeat bet
 run with no step count, reports elapsed seconds with `total` omitted, and the words go in
 `message`. A tool never resends the same `progress` value.
 
-The first progress notification names the run resource.
+From the moment the run is allocated, every progress notification, heartbeats included, carries
+the run's reference (4.3) in its `_meta` under `table-manners/run`:
 
-MCP tasks (experimental in `2025-11-25`, moving to an extension) are not used in v0.1.
+```jsonc
+{ "progressToken": 7, "progress": 3, "message": "turn 1: waiting on the provider, 12 s",
+  "_meta": { "table-manners/run": { "id": "decision-…", "resource": "squint://run/decision-…/run.json",
+                                    "session_id": "0b7e3c5a-…", "client_run_id": "host-7f3a.attempt:1" } } }
+```
+
+A notification before allocation (a call waiting for the execution permit, 4.5) carries none. The
+run is never named in `message`, which is for people: a client reads `_meta`, never the words.
+
+MCP tasks (experimental in `2025-11-25`, moving to an extension) are not used in v0.2.
 
 ### 4.2 Cancellation
 
@@ -191,29 +211,119 @@ On `notifications/cancelled` (or SIGINT or SIGTERM on the command line) a tool s
 at once, writes the run resource and `run.json` with status `cancelled` and spend to date, and
 returns no MCP result (the protocol says a cancelled request gets none).
 
+Waiting for the execution permit is itself cancellable, and a tool checks for cancellation again
+just before it allocates the run. A cancel that lands before allocation leaves no run and no
+spend. Once a run is allocated, a cancelled run is kept, with its spend to date (4.5).
+
 ### 4.3 Runs are resources
 
 Every run a server performs is readable by id: `<tool>://run/<id>/run.json` at least, and
-`<tool>://run/<id>/journal` for the journal. `<tool>://runs` lists recent runs newest first (id,
-action, status, started, resource), so a run is always discoverable, including after a cancel or a
-dropped connection on a call that sent no progress token. A run still going is listed as
-`running`; its journal is readable, and its `run.json` exists once it has ended. An agent whose
-call timed out or whose connection dropped reads the resource instead of calling again; the
-playground reads the same resources for its history.
+`<tool>://run/<id>/journal` for the journal. An agent whose call timed out or whose connection
+dropped reads the resource instead of calling again; the playground reads the same resources for
+its history.
+
+A run's **reference** (`schemas/core/run-ref.json`) is its identity wherever it appears: progress
+`_meta` (4.1), the result's `run` (which adds `dir`, 2.3), runs-list entries and a reuse refusal
+(4.4). It holds `id`, `resource`, `session_id` and `client_run_id`, all required. A run made
+outside a server session (a tool's CLI) has `session_id: null`; a request that sent no
+correlation id has `client_run_id: null`.
+
+A tool persists the reference, with the action, when it allocates the run, before it reserves
+spend or does paid work. From then the run is listed as `running`, its journal is readable, and
+its `run.json` exists once it has ended.
+
+`<tool>://runs{?cursor}` lists runs newest first, ordered by (`started`, `id`), one page at a
+time: each entry is the run's reference with `action`, `status` and `started`, and the page
+carries `next_cursor`. An absent cursor reads page one; the next page is
+`<tool>://runs?cursor=<next_cursor>`; the last page's `next_cursor` is null. The cursor is opaque
+to clients and encodes a position in that order, not an offset; page size is the tool's choice.
+Runs started after page one was read may be missed by later pages; re-reading page one is how a
+client sees them. MCP's `resources/list` paging does not page entries inside this resource.
+
+A client that lost a call's notifications finds its run by the pair (`session_id`,
+`client_run_id`) only, never by action, time or path. Absence from the list does not prove that
+no work or spend happened: a cancel before allocation leaves no run, and a session that ended
+leaves its runs but not its ledger.
 
 ### 4.4 Retries do not pay twice
 
 A tool with a paid step is idempotent on identical inputs within its cache policy: an identical
 retry is answered from the cache with `cache: "hit"` and `spend.usd: 0`.
 
+A caller MAY correlate a call by sending `_meta["table-manners/client_run_id"]` in the
+`tools/call` request beside its progress token: 1 to 128 characters of `[A-Za-z0-9._:-]`, since it
+lands in files, listings and logs. The tool echoes it in the run's reference. Within a session a
+non-null id is used at most once:
+
+- The tool claims the id atomically when it accepts the request, before the request waits for the
+  permit, so concurrent requests with one id execute at most once.
+- A request whose id is already claimed is refused before any run exists, as a JSON-RPC error:
+  `-32602` with `data` per `schemas/core/refusal.json`, `{"reason": "client_run_id_reused",
+  "run": <the earlier request's run reference>}`. `run` is null while the earlier request has no
+  run (it is still waiting, or it was cancelled before allocation).
+- The refusal never stands for the new request's result. The client reconciles the earlier run
+  with its own saved attempt; it does not retry automatically.
+
+This is not exactly-once execution across processes: a new session forgets the ids it never saw.
+
 ### 4.5 Spend limits
 
 - A per-call cap in the tool's config. A call MAY lower it (`max_spend_usd`); it MUST NOT raise it.
 - A per-session budget in the tool's config, across every call the server process serves.
-- Every result reports spend (2.3). A tool that may spend provides an `estimate` action returning
-  the worst case for a given call and the session budget left.
-- Calls are serial by default; a tool MAY allow more with a concurrency setting.
+- Both limits are enforced. The limits check **reserves** the call's worst case into the
+  session's `reserved_usd` in the same atomic step, so two concurrent calls never pass the check
+  against the same spend; the run's end **settles** the reservation into `spent_usd`.
+- Every provider call is one of three:
+  - *not sent*: refused before its request left the tool (no credential, connection refused). It
+    costs nothing and releases its reservation.
+  - *known*: the provider answered (success, authentication rejected, or a failure status that
+    reports usage). It counts the charge its answer reports, or the usage it reports (tokens,
+    images) at the tool's per-unit prices; either is `measured`. An answer that refuses the
+    request before any work (authentication rejected) counts zero. A successful answer that
+    reports neither a charge nor usage counts the tool's configured price for the call, and the
+    run's `spend.basis` is then `estimated`.
+  - *unresolved*: the request was sent and no answer settles it (cancelled or killed mid-call,
+    timed out, a failure status whose answer reports no usage). It counts its worst case, and the
+    amount is also counted in `unresolved_usd`.
+
+  All of this holds whatever the run's status. Unknown spend is never reported as zero and its
+  reservation is never released.
+- Every result reports spend (2.3). A tool that may spend provides an `estimate` action. An
+  estimate MUST NOT spend; it reports the worst case for the given call and the effective per-call
+  cap (the configured cap lowered by `max_spend_usd`). An estimate MAY be a run (squint's is, with
+  zero spend) or not (rascal's). Where the session observation sits in an estimate's result is
+  fixed with readiness (PROPOSALS.md, C1); until then a client reads `<tool>://session`, and a
+  tool carries no private copy of the session in its estimate body.
+- Calls are serial by default; a tool MAY allow more with a concurrency setting. Execution
+  concurrency does not depend on whether an action costs money. While a run holds the execution
+  permit, `describe`, local estimates, every resource read (runs, a run, its journal, the
+  session) and cancellation MUST stay responsive: none of them waits for the permit.
 - A per-period budget (a day, a month) is later work: it needs a durable ledger across processes.
+
+### 4.6 The session
+
+A **session** is one serving process's spend ledger. `<tool>://session`
+(`schemas/core/session.json`) returns one atomic observation of it:
+
+```jsonc
+{ "contract": "0.2.0", "tool": { "name": "rascal", "version": "0.1.0" },
+  "id": "0b7e3c5a-6f1d-4c2e-9a8b-3d4e5f6a7b8c", "started": "2026-10-31T18:02:11.530Z",
+  "budget_usd": 2.0, "spent_usd": 0.16, "unresolved_usd": 0.04, "reserved_usd": 0.04,
+  "remaining_usd": 1.8 }
+```
+
+- `id` is a random UUID (v4), lowercase, generated when `serve` starts. A tool that reloads its
+  configuration or resets its ledger starts a new session with a new id; neither squint nor rascal
+  does today, so their sessions last the process.
+- `started` is RFC 3339 UTC, like every timestamp.
+- `spent_usd` is settled spend and includes `unresolved_usd`; `reserved_usd` is the worst cases
+  held by runs still going.
+- `budget_usd` and `remaining_usd` are null together, exactly when the session is uncapped; null
+  is never a zero allowance. `remaining_usd = max(0, budget_usd - spent_usd - reserved_usd)`.
+- Amounts are US dollars. Tools write them with at most six decimals and clients compare them to
+  1e-6.
+- A session is not a daily budget or a provider account balance. When a server restarts, a client
+  sees a new id; what an interrupted session left unresolved stays unresolved in its runs.
 
 ## 5. MCP server conventions
 
@@ -230,7 +340,12 @@ Lifted from `rascal serve` (rascal ADR 0015).
   `error`. The header is the point: spend to date, `retryable` and salvaged outputs (2.3) travel
   only in a result, and a JSON-RPC error reaches a model client as an opaque failure.
 - JSON-RPC errors are reserved for failures before a run exists: an unknown tool, arguments the MCP
-  layer rejects against the input schema, the server itself failing.
+  layer rejects against the input schema, a reused `client_run_id` (4.4), the server itself
+  failing. A refusal the contract names carries `data.reason` (`schemas/core/refusal.json`) so a
+  host can tell it from other invalid params.
+- The contract's request and notification metadata lives in MCP's `_meta` under keys prefixed
+  `table-manners/` (`table-manners/run`, `table-manners/client_run_id`), so it needs no MCP
+  revision of its own.
 - Rust tools SHOULD use the official SDK, `rmcp`, pinned exactly; rascal and squint pin `=3.8.0`.
   A tool in another language uses its official SDK at the same revision.
 - Every tool's test suite drives its server with an independently written client that shares no
@@ -252,15 +367,36 @@ Lifted from `rascal serve` (rascal ADR 0015).
 A conforming tool provides, at the contract version it names:
 
 1. `describe --json` and the `describe` MCP tool (3), validated against the schema in its tests.
-2. `serve` (5) with an action per description entry, progress (4.1), cancellation (4.2), run
-   resources and the runs list (4.3), and spend limits where it spends (4.5).
+2. `serve` (5) with an action per description entry, progress with the run reference (4.1),
+   cancellation (4.2), run resources and the paged runs list (4.3), correlation ids (4.4), spend
+   limits with reservation and the three-way accounting where it spends (4.5), and the session
+   resource (4.6).
 3. `run.json` (2), written atomically, in every run directory, on every surface, including
    cancelled and failed runs.
 4. The exit codes (6).
 5. A `playground` subcommand that finds, offers to install and starts the shared playground; it
    carries no UI.
 6. Every profile it lists, conforming (12 for images).
-7. The conformance fixtures in `fixtures/<tool>/` passing in its CI against its pinned release.
+7. The conformance fixtures in `fixtures/<tool>/` passing in its CI against its pinned release:
+   `describe.json`, `run-*.json` results, `runs*.json` pages, `session.json` and `refusal-*.json`
+   reuse refusals. A release is tagged only when every tool's fixtures validate against it. For
+   v0.2 they include accepted, reused and mismatched client ids, cancels before and after
+   allocation, unresolved spend, a reservation in flight, a restarted session and a read while
+   the permit is held.
+
+## Changes from v0.1
+
+Breaking, as a minor before 1.0 may be (1):
+
+- The result's `run` adds `session_id` and `client_run_id` (required, nullable); runs-list entries
+  are run references with `action`, `status` and `started`; the runs list is paged and adds
+  `next_cursor` (4.3).
+- `spend` adds `unresolved_usd` (required), and `measured` covers usage priced per unit (2.3, 4.5).
+- Progress names the run in `_meta`, not in `message` (4.1).
+
+Added: the run reference (`run-ref.json`), correlation ids and the reuse refusal (`refusal.json`,
+4.4), reservation and the three-way accounting (4.5), responsiveness while a run executes (4.5),
+cancellable permit waits (4.2), and the session (`session.json`, 4.6).
 
 # Part 2: the images profile
 

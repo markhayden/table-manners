@@ -1,0 +1,96 @@
+{
+  "contract": "0.2.0",
+  "tool": {
+    "name": "squint",
+    "version": "0.2.0"
+  },
+  "action": "check",
+  "run": {
+    "id": "decision-1793386884140-53022",
+    "resource": "squint://run/decision-1793386884140-53022/run.json",
+    "session_id": "serve-1793386884140-53022",
+    "client_run_id": null,
+    "dir": "/abs/squint-out/decision-1793386884140-53022"
+  },
+  "status": "completed",
+  "error": null,
+  "started": "2026-10-30T19:09:42.118Z",
+  "finished": "2026-10-30T19:10:21.904Z",
+  "duration_ms": 39786,
+  "input_identity": "sha256:7777777777777777777777777777777777777777777777777777777777777777",
+  "spend": {
+    "usd": 0.0389,
+    "unresolved_usd": 0,
+    "basis": "measured"
+  },
+  "cache": "miss",
+  "images": {
+    "in": [
+      {
+        "slot": "candidate",
+        "role": "candidate",
+        "image": {
+          "file_sha256": "3f9a000000000000000000000000000000000000000000000000000000000000",
+          "width": 2048,
+          "height": 1024,
+          "projection": "equirectangular",
+          "topology": "wrap"
+        }
+      },
+      {
+        "slot": "source",
+        "role": "source",
+        "image": {
+          "file_sha256": "9999999999999999999999999999999999999999999999999999999999999999",
+          "width": 2048,
+          "height": 1024,
+          "projection": "equirectangular",
+          "topology": "wrap"
+        }
+      }
+    ],
+    "out": []
+  },
+  "locations": {
+    "used": [],
+    "found": [
+      {
+        "image": {
+          "file_sha256": "3f9a000000000000000000000000000000000000000000000000000000000000",
+          "width": 2048,
+          "height": 1024,
+          "projection": "equirectangular",
+          "topology": "wrap"
+        },
+        "kind": "bbox",
+        "parts": [
+          {
+            "bbox": [
+              0.41,
+              0.22,
+              0.47,
+              0.31
+            ]
+          }
+        ],
+        "straddles_wrap": false,
+        "label": "a seagull on the left lamp post",
+        "disposition": "violation",
+        "confidence": "confident",
+        "evidence": "source",
+        "source": {
+          "tool": "squint",
+          "version": "0.2.0",
+          "run": "decision-1793386884140-53022",
+          "item": "F1"
+        }
+      }
+    ]
+  },
+  "notes": [
+    "repair: the first submission omitted item C3; repaired in one turn"
+  ],
+  "body": {
+    "verdict": "fail"
+  }
+}

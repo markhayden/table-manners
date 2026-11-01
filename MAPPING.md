@@ -10,6 +10,21 @@ except the `playground` subcommand, which waits on the launcher agreement with w
 its fixtures are in `fixtures/squint/` and what it found is in `PROPOSALS.md`. rascal's conformance
 is under way in its milestone 8. The squint column below is the starting point, kept for review.
 
+## v0.2 (run association and the session)
+
+| contract | squint | rascal |
+|---|---|---|
+| `run.session_id`, `run.client_run_id` on results and runs entries; persisted at allocation | add | add |
+| progress `_meta` `table-manners/run` on every notification from allocation; no run in `message` | change | change |
+| `_meta["table-manners/client_run_id"]`, claimed at acceptance; `-32602` `client_run_id_reused` with the earlier run | add | add |
+| `<tool>://runs{?cursor}` with `next_cursor` | add | add |
+| reserve at the limits check, settle at the end | add | done (M9) |
+| not sent / known / unresolved; `spend.unresolved_usd` | add | change (M9 reports it in the body) |
+| `<tool>://session` with a UUID v4 id | add | add |
+| describe, estimates, reads and cancel never wait on the execution permit | done (`m7-review`) | done (M9) |
+| permit wait cancellable; a cancel before allocation leaves no run | done (`m7-review`) | done |
+| no private session fields in the estimate body | change | change |
+
 ## Locations
 
 | today | contract | squint | rascal |
