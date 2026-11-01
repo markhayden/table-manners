@@ -12,18 +12,21 @@ is under way in its milestone 8. The squint column below is the starting point, 
 
 ## v0.2 (run association and the session)
 
+rascal's side is built on its branch `m11-table-manners-v02` (milestone M11), against this draft
+by path; its fixtures are in `fixtures/rascal/`.
+
 | contract | squint | rascal |
 |---|---|---|
-| `run.session_id`, `run.client_run_id` on results and runs entries; persisted at allocation | add | add |
-| progress `_meta` `table-manners/run` on every notification from allocation; no run in `message` | change | change |
-| `_meta["table-manners/client_run_id"]`, claimed at acceptance; `-32602` `client_run_id_reused` with the earlier run | add | add |
-| `<tool>://runs{?cursor}` with `next_cursor` | add | add |
+| `run.session_id`, `run.client_run_id` on results and runs entries; persisted at allocation | add | done (M11) |
+| progress `_meta` `table-manners/run` on every notification from allocation; no run in `message` | change | done (M11) |
+| `_meta["table-manners/client_run_id"]`, claimed at acceptance; `-32602` `client_run_id_reused` with the earlier run | add | done (M11) |
+| `<tool>://runs{?cursor}` with `next_cursor` | add | done (M11) |
 | reserve at the limits check, settle at the end | add | done (M9) |
-| not sent / known / unresolved; `spend.unresolved_usd` | add | change (M9 reports it in the body) |
-| `<tool>://session` with a UUID v4 id | add | add |
+| not sent / known / unresolved; `spend.unresolved_usd` | add | done (M11) |
+| `<tool>://session` with a UUID v4 id | add | done (M11) |
 | describe, estimates, reads and cancel never wait on the execution permit | done (`m7-review`) | done (M9) |
-| permit wait cancellable; a cancel before allocation leaves no run | done (`m7-review`) | done |
-| no private session fields in the estimate body | change | change |
+| permit wait cancellable; a cancel before allocation leaves no run | done (`m7-review`) | done (M11) |
+| no private session fields in the estimate body | change | done (M11) |
 
 ## Locations
 
