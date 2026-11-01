@@ -217,3 +217,8 @@ render exits 0 on stdin EOF or SIGTERM (3.2).
 Then: readiness describes the action as configured now, and its requirements name every variable
 that use reads; `config_identity` digests the built-in defaults when no file is loaded, so a call
 that spends nothing is estimated at 0 without a configuration (3.1, 4.5).
+
+From Wafflery's v0.3 client plan: a render's `command[0]` is the tool's own name and the host runs
+the executable it serves (3.2); a document render writes one self-contained file outside the run
+directory (3.2); an estimate's wrong request is `-32602` with the `invalid_arguments` refusal
+carrying the error object (4.5).

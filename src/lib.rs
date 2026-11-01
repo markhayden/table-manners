@@ -516,6 +516,9 @@ pub struct Refusal {
     /// `not_ready`: the requirements the call needs that are missing or invalid.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub requirements: Option<Vec<Requirement>>,
+    /// `invalid_arguments`: what was wrong (`usage` or `input`, not retryable).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub error: Option<ErrorInfo>,
 }
 
 /// The refusals the contract names.
@@ -526,6 +529,8 @@ pub enum RefusalReason {
     ClientRunIdReused,
     /// The call needs a requirement that is missing or invalid (3.1).
     NotReady,
+    /// An estimate's request was wrong (4.5).
+    InvalidArguments,
 }
 
 /// What the reserved `estimate` tool returns (4.5): the worst case of one exact call, bound to

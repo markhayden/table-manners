@@ -1,0 +1,9 @@
+{
+  "reason": "invalid_arguments",
+  "run": null,
+  "error": {
+    "code": "usage",
+    "retryable": false,
+    "reason": "max_spend_usd 2.0 is above the configured per-call cap of 0.5"
+  }
+}

@@ -251,10 +251,14 @@ action, what stands between the action and a run:
 
 A render is a command that shows a run to a person. Its `command` is an argv; the host substitutes
 `{run.dir}` (the run directory) and, for a server, `{frame_ancestor}`, each only where it is a whole
-argument, and runs it without a shell. A render never modifies the run directory.
+argument, and runs it without a shell. A render never modifies the run directory. Its
+`command[0]` is the tool's own name (`tool.name`), and the host runs the same executable it
+serves, never another program and never another install found on `PATH`.
 
-- `kind: "document"` writes a file and exits. Its only stdout is one line, the absolute path of
-  what it wrote. Exit 0 means the path exists.
+- `kind: "document"` writes one self-contained file (images and styles inline, nothing it needs
+  beside it) at a path the tool chooses outside the run directory, and exits. Its only stdout is
+  one line, the absolute path of that file. Exit 0 means the file exists. The host reads that one
+  file and nothing next to it.
 - `kind: "server"` serves a page over HTTP on loopback. Once it is listening it prints exactly one
   line to stdout, the URL (`http://127.0.0.1:<port>/…`), and nothing else ever. It binds port 0
   unless the command says otherwise. It serves until its stdin closes or it receives SIGTERM, then
@@ -418,7 +422,12 @@ It answers with an estimate (`schemas/core/estimate.json`) as `structuredContent
   "expires": "2026-11-01T20:15:00.000Z" }
 ```
 
-- An estimate MUST NOT spend, call a provider or write a run. It never waits for the permit (see
+- An estimate MUST NOT spend, call a provider or write a run. Since it is never a run, its failures
+  are JSON-RPC errors: arguments the input schema rejects are plain invalid params (`-32602`);
+  any other wrong request (`max_spend_usd` above the configured cap, an `expect` that does not
+  match, an unknown action) is `-32602` with refusal data `{"reason": "invalid_arguments",
+  "run": null, "error": {…the error object, 2.2: `usage` or `input`, not retryable…}}`. A call
+  that is not ready is not an error: its estimate is `refused: "readiness"`. It never waits for the permit (see
   below). It is a control request, not history; a host never shows it as an attempt.
 - `binding` is a digest the tool computes over the action, the arguments after resolving every
   image to its file digest (8.1), the tool version, the effective configuration

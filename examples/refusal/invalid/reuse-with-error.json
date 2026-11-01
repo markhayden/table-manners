@@ -1,0 +1,14 @@
+{
+  "reason": "client_run_id_reused",
+  "run": {
+    "id": "run-1793387000412-48113",
+    "resource": "rascal://run/run-1793387000412-48113/run.json",
+    "session_id": "0b7e3c5a-6f1d-4c2e-9a8b-3d4e5f6a7b8c",
+    "client_run_id": "host-7f3a.attempt:1"
+  },
+  "error": {
+    "code": "usage",
+    "retryable": false,
+    "reason": "x"
+  }
+}
