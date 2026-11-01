@@ -3,9 +3,19 @@
 Changes the tools' conformance work found the contract needs. Each names who found it and the
 evidence; none is binding until it lands in CONTRACT.md and the schemas at a tag.
 
-**v0.2 carries C4 only** (run association and budget sessions, below), drafted into CONTRACT.md
-sections 2.3, 4 and 4.6 and the schemas `run-ref`, `session` and `refusal`. Items 1 to 5 from
-squint's conformance stay proposed for v0.3 with C1 (readiness).
+**v0.2 carried C4** (run association and budget sessions, below).
+
+**v0.3 (draft in CONTRACT.md, 2026-11-01)** adopts, decided by the coordinating session that owns
+this repository: squint's items 1, 3, 4 and 5 below; Wafflehouse's C1 (readiness and its paid-path
+follow-up: configuration lifetime, estimate binding, the per-call cap, and estimates as controls);
+C3 (render readiness, framing and lifetime); and option (a) of "a claim released when the request
+gets no run". Two choices go further than the proposals, to take tech debt out rather than carry
+two shapes: estimates are never runs (squint's zero-spend estimate runs go), and `cost.needs_env`
+is replaced by per-action readiness requirements.
+
+**Left for v0.4:** item 2 (the replacement for MCP roots), C2 (invocation snapshots and portable
+artifacts), the operations profile (Wafflehouse R3, rascal M10.1), and C1's grouping of tasks,
+operations and utilities, which needs that profile's definition of an operation.
 
 ## From squint's conformance (M7, 2026-10-31)
 
