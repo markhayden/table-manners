@@ -5,10 +5,9 @@ The contract was drawn from both tools as they stand on 2026-10-30: rascal at `9
 field by field, where each differs today. It is a work list for each tool's conformance milestone,
 not part of the contract; it is deleted once both conform.
 
-**Status 2026-10-31.** squint conforms to v0.1.0 on its `m7-contract` branch (milestone M7)
-except the `playground` subcommand, which waits on the launcher agreement with wafflehouse (H1);
-its fixtures are in `fixtures/squint/` and what it found is in `PROPOSALS.md`. rascal's conformance
-is under way in its milestone 8. The squint column below is the starting point, kept for review.
+**Status 2026-11-01.** Both tools conform to v0.2.0 and pin `=0.2.0` from crates.io: rascal since
+milestone M11 (tag `m11`), squint since milestone M8 (tag `m8`). Wafflehouse pins `=0.2.0` as a
+client. v0.3 is being drafted in `PROPOSALS.md`. The v0.1 columns below are kept for review.
 
 ## v0.2 (run association and the session)
 
