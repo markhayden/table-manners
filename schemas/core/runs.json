@@ -53,8 +53,8 @@
         "string",
         "null"
       ],
-      "minLength": 1,
-      "description": "Opaque; read the next page as <tool>://runs?cursor=<next_cursor>. Null on the last page."
+      "pattern": "^[A-Za-z0-9._~-]{1,256}$",
+      "description": "Opaque, URI-unreserved characters only, so it goes into <tool>://runs?cursor=<next_cursor> unencoded. Null on the last page."
     }
   }
 }

@@ -202,7 +202,8 @@ pub enum ErrorCode {
 pub struct Spend {
     /// US dollars, including a cancelled or failed run's spend to date; 0 for a cache hit.
     pub usd: f64,
-    /// The part of `usd` no provider answer settled (4.5): an upper bound, not a charge.
+    /// The part of `usd` no provider answer settled (4.5): an upper bound, not a charge; never
+    /// more than `usd`.
     pub unresolved_usd: f64,
     /// How the figure was obtained.
     pub basis: SpendBasis,
@@ -340,7 +341,8 @@ pub struct RunsList {
     pub tool: Tool,
     /// Runs, newest first.
     pub runs: Vec<RunSummary>,
-    /// Opaque; the next page is `<tool>://runs?cursor=<next_cursor>`. None on the last page.
+    /// Opaque, URI-unreserved characters only; the next page is `<tool>://runs?cursor=<next_cursor>`.
+    /// None on the last page.
     pub next_cursor: Option<String>,
 }
 

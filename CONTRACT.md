@@ -127,6 +127,7 @@ Present exactly when `status` is `error` or `invalid`, and null otherwise:
 - `spend.usd` is what this run cost by the accounting in 4.5, including a cancelled or failed
   run's spend to date; 0 for a cache hit. `spend.unresolved_usd` is the part of it no provider
   answer settled: an upper bound, so a client shows "at most", never zero or an exact figure.
+  `unresolved_usd` never exceeds `usd`.
   `spend.basis` describes the settled part: `measured` when every known call's figure came from
   its answer (a charge, or usage priced per unit), `estimated` when any known call counts a
   configured price. The unsettled part is marked by `unresolved_usd`, not by `basis`.
@@ -237,6 +238,8 @@ time: each entry is the run's reference with `action`, `status` and `started`, a
 carries `next_cursor`. An absent cursor reads page one; the next page is
 `<tool>://runs?cursor=<next_cursor>`; the last page's `next_cursor` is null. The cursor is opaque
 to clients and encodes a position in that order, not an offset; page size is the tool's choice.
+The cursor uses only URI-unreserved characters (`[A-Za-z0-9._~-]`, at most 256), so it goes into
+the query unencoded.
 Runs started after page one was read may be missed by later pages; re-reading page one is how a
 client sees them. MCP's `resources/list` paging does not page entries inside this resource.
 
@@ -261,6 +264,8 @@ non-null id is used at most once:
   `-32602` with `data` per `schemas/core/refusal.json`, `{"reason": "client_run_id_reused",
   "run": <the earlier request's run reference>}`. `run` is null while the earlier request has no
   run (it is still waiting, or it was cancelled before allocation).
+- A claimed id stays claimed for the session even when its request is cancelled before
+  allocation; a client that retries such a request uses a new id.
 - The refusal never stands for the new request's result. The client reconciles the earlier run
   with its own saved attempt; it does not retry automatically.
 
