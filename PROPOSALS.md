@@ -86,49 +86,72 @@ canonical `wafflehouse`, `WAFFLEHOUSE_BIN` override, PATH then `~/.local/bin/waf
 browser bootstrap and opening. Review that owner packet independently of the core schemas;
 production installer publication remains a separate release subgate.
 
-## rascal's review of C4 (2026-10-31, rascal `f0e45fb`; revised after Wafflehouse's reply)
+## rascal's and squint's review of C4 (2026-10-31; rascal `f0e45fb`, squint `eef1f10`)
 
-rascal agrees with C4's direction: `_meta`, no MCP revision bump, per-process ledgers, no retry or
-job service. rascal already allocates the run and sends its resource in the first progress message
-before the limits check and any filler call (`actions.rs` `run_action`); a cancel while waiting for
-the call permit leaves no run. The amendments below are what rascal would implement; squint's
-review decides the names with it.
+Both tools agree with C4's direction: `_meta`, no MCP revision bump, per-process ledgers, no retry
+or job service. rascal coordinates this text; squint's review (its ten points and the refinements
+agreed after the owner's read) is folded in below. Nothing here is binding until it lands in
+CONTRACT.md and the schemas at a tag.
 
-1. **One run reference.** A shared definition of the run's identity, `{id, resource, session_id,
-   client_run_id}`, used by `table-manners/run` in progress `_meta`, run-list entries and the
-   result's `run`. The result's `run` adds `dir`, optional, as squint proposes: a remote server has
-   no local directory. `session_id` and `client_run_id` are required and nullable.
-2. **A bounded correlation id.** `table-manners/client_run_id`: 1 to 128 characters of
-   `[A-Za-z0-9._:-]`; it lands in files, listings and logs.
-3. **A reused id never selects another request.** The rejection is squint's structured
-   `client_run_id_reused` error, a JSON-RPC error before any run exists, and its `data` carries the
-   earlier run's reference. The client reconciles that reference with its own saved attempt; it
-   is never the new request's result. The id is claimed atomically before a run is allocated, so
-   concurrent submissions of one id execute at most once.
-4. **The run is listed from allocation.** A run is in the runs resource with state `running` and
-   its reference from the moment the first notification names it, before paid work.
-5. **Reserve, then settle.** The limits check reserves the call's worst case into `reserved_usd`
-   in the same atomic step; the run's end settles it (6). rascal has the race this prevents
-   (two calls under `--concurrency 2` both pass the check against the same `spent`).
-6. **Known charges are kept; unknown charges stay unknown.** A provider call is *not sent*
+1. **One run reference.** A shared v0.2 definition, `run_ref`, of the run's identity: `{id,
+   resource, session_id, client_run_id}`. Progress `_meta` (`table-manners/run`), runs-list
+   entries and the result's `run` all `$ref` it; the result's `run` adds `dir`, optional, since a
+   remote server has no local directory. `session_id` and `client_run_id` are required and
+   nullable, so absence never means "unknown". The result's `run` has
+   `additionalProperties: false` in v0.1, so this is a breaking change, which v0.2 accepts.
+2. **A bounded correlation id.** `table-manners/client_run_id` matches `^[A-Za-z0-9._:-]{1,128}$`;
+   it lands in files, listings and logs.
+3. **A reused id never selects another request.** No run exists for the new request, so the
+   refusal is a JSON-RPC error: `-32602` with `data: {"reason": "client_run_id_reused", "run":
+   <run_ref>}`, the earlier run's reference. The reason string is part of the contract so hosts
+   can tell it from other invalid params. The client reconciles that reference with its own saved
+   attempt; it is never the new request's result. The id is claimed atomically before a run is
+   allocated, so concurrent submissions of one id execute at most once.
+4. **The run is named from allocation, on every notification.** Once the run is allocated, every
+   progress notification carries `table-manners/run` in `_meta`, heartbeats included. The run's
+   URI leaves the `message` text: there is no dual format.
+5. **The run is listed from allocation.** The tool persists the association (session id, client
+   run id, action) when it creates the run, before reservation and paid work, so a `running`
+   entry in the runs resource carries its reference.
+6. **Runs-list pagination.** Paging is in the resource, not MCP's `resources/list`: a templated
+   `<tool>://runs{?cursor}` returns a page and the next cursor. The cursor encodes a position in
+   the newest-first order (started, id), not an offset. Runs started after page one was read may
+   be missed; re-reading page one is how a client sees them.
+7. **Reserve, then settle.** The limits check reserves the call's worst case into
+   `reserved_usd` in the same atomic step; the run's end settles it (8). This prevents two
+   concurrent calls passing the check against the same `spent_usd`.
+8. **Known charges are kept; unknown charges stay unknown.** A provider call is *not sent*
    (refused before its request left the tool: no credential, connection refused, authentication
    rejected), *known* (the provider answered), or *unresolved* (the request was sent and no
    answer settles it: cancelled or killed mid-call, timed out, a failure status). A not-sent call
    costs nothing and releases its reservation; known and unresolved calls count their worst case
-   whatever the run's status. Proposal: the result's `spend` adds `unresolved_usd` (the part of
-   `usd` not settled by an answer) and the session adds `unresolved_usd` (the part of `spent_usd`),
-   so a host shows "at most" rather than zero or a false exact figure. rascal fixes its own
-   accounting now and reports the unresolved part in its body until v0.2 names the field.
-7. **Reads never wait on the execution permit.** `describe`, `estimate` and every resource read,
-   `<tool>://session` included, MUST answer while a run holds the permit. Recommended over
-   "estimates may be serialized": the host then needs no rule about when it may ask.
-8. **Estimates need not be runs.** rascal's `estimate` writes no run; squint's writes a zero-spend
-   run. Allow both; an estimate MUST NOT spend and carries the same `session` object as the
-   resource, at a place C1 fixes in the estimate's result.
-9. **Session schema details.** `budget_usd` and `remaining_usd` are null together when uncapped;
-   `remaining_usd = max(0, budget_usd - spent_usd - reserved_usd)`; amounts are compared to
-   1e-6 USD. rascal reads its configuration once at `serve` start, so its session id is per
-   process; a reload, if one is added, changes it.
+   whatever the run's status. The result's `spend` adds `unresolved_usd` (the part of `usd` not
+   settled by an answer) and the session adds `unresolved_usd` (the part of `spent_usd`), so a
+   host shows "at most" rather than zero or a false exact figure.
+9. **Responsiveness while a run executes.** `describe`, local estimates, status, the session and
+   every resource read, and cancellation MUST stay responsive while a run holds the execution
+   permit. Execution concurrency itself does not depend on whether an action costs money.
+10. **Queued cancellation.** Waiting for the permit is itself cancellable, and cancellation is
+    checked again before allocation. A cancel that lands before allocation leaves no run; once a
+    run is allocated, a cancelled run is kept with its spend.
+11. **Estimates need not be runs.** rascal's `estimate` writes no run; squint's writes a
+    zero-spend run. Both are allowed; an estimate MUST NOT spend. It reports the effective
+    per-call cap (the configured cap lowered by `max_spend_usd`) and the same session observation
+    as the resource, at a place C1 fixes; tool-private session fields in estimate bodies go away.
+    The per-call cap and the session budget are separate limits and both are enforced.
+12. **The `<tool>://session` resource.** It carries `contract` and `tool` like every resource.
+    `budget_usd` and `remaining_usd` are null only together (uncapped);
+    `remaining_usd = max(0, budget_usd - spent_usd - reserved_usd)`; amounts use the result
+    spend's rounding and compare to 1e-6 USD. The session id is a random UUID (v4) generated at
+    `serve` start; neither tool reloads configuration, so it is fixed for the process.
 
-Fixtures: rascal produces its own cancelled and unresolved-spend runs from its independent client,
-alongside squint's; no paid calls.
+**Tagging.** table-manners tags v0.2 only after the agreed schemas and representative fixtures
+from both tools validate: accepted, reused and mismatched client ids; cancel before and after
+allocation; unresolved spend; reserved moving; a session restart; reads while the permit is held.
+C4 does not wait on C1: if C1's shapes are not ready, C4 ships as v0.2 and C1 follows in v0.3.
+
+**Agreed for later proposals, not C4.** C1: a credential's readiness is `present`, `valid` or
+`unknown` (not checked); finding a key never sets `valid`. C3: the readiness line carries only the
+URL, no pid (the host owns the child), and framing is allowed only for one explicit host origin
+the host passes (for example `--frame-ancestor http://127.0.0.1:<port>`), never loopback in
+general.
