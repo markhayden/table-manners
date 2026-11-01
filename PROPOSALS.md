@@ -64,6 +64,7 @@ session identity. This proposal adds observation/correlation, not a durable ledg
   agreed alongside C1's estimate mapping. The tool's cap/reservation enforcement is authoritative.
 - Squint currently serializes estimates and writes zero-spend estimate run resources. That is
   allowed; clients can treat their own estimate calls as controls rather than user history.
+  (Superseded by point 9 of the tools' review below.)
 - Host config recheck must not silently restart a server. Deliberate restart invalidates estimates
   and shows a new allowance session. Unknown spend from an old interrupted session stays unknown.
   A process allowance is not a daily budget or provider account balance.
@@ -95,9 +96,10 @@ CONTRACT.md and the schemas at a tag.
 
 1. **One run reference.** A shared v0.2 definition, `run_ref`, of the run's identity: `{id,
    resource, session_id, client_run_id}`. Progress `_meta` (`table-manners/run`), runs-list
-   entries and the result's `run` all `$ref` it; the result's `run` adds `dir`, optional, since a
-   remote server has no local directory. `session_id` and `client_run_id` are required and
-   nullable, so absence never means "unknown". The result's `run` has
+   entries and the result's `run` all `$ref` it; the result's `run` adds `dir`, required and null when
+   the server has no local directory (as in v0.1). `session_id` and `client_run_id` are required
+   and nullable, so absence never means "unknown". A run made outside a server session (a tool's
+   CLI) has `session_id: null`; a request that sent no correlation id has `client_run_id: null`. The result's `run` has
    `additionalProperties: false` in v0.1, so this is a breaking change, which v0.2 accepts.
 2. **A bounded correlation id.** `table-manners/client_run_id` matches `^[A-Za-z0-9._:-]{1,128}$`;
    it lands in files, listings and logs.
@@ -114,17 +116,23 @@ CONTRACT.md and the schemas at a tag.
    run id, action) when it creates the run, before reservation and paid work, so a `running`
    entry in the runs resource carries its reference.
 6. **Runs-list pagination.** Paging is in the resource, not MCP's `resources/list`: a templated
-   `<tool>://runs{?cursor}` returns a page and the next cursor. The cursor encodes a position in
+   `<tool>://runs{?cursor}` returns a page and its `next_cursor`. The cursor is opaque to
+   clients; an absent cursor reads page one, the last page's `next_cursor` is null, and page size
+   is the tool's choice. The cursor encodes a position in
    the newest-first order (started, id), not an offset. Runs started after page one was read may
    be missed; re-reading page one is how a client sees them.
 7. **Reserve, then settle.** The limits check reserves the call's worst case into
    `reserved_usd` in the same atomic step; the run's end settles it (8). This prevents two
    concurrent calls passing the check against the same `spent_usd`.
 8. **Known charges are kept; unknown charges stay unknown.** A provider call is *not sent*
-   (refused before its request left the tool: no credential, connection refused, authentication
-   rejected), *known* (the provider answered), or *unresolved* (the request was sent and no
-   answer settles it: cancelled or killed mid-call, timed out, a failure status). A not-sent call
-   costs nothing and releases its reservation; known and unresolved calls count their worst case
+   (refused before its request left the tool: no credential, connection refused), *known* (the
+   provider answered: success, authentication rejected, or a failure status that reports usage),
+   or *unresolved* (the request was sent and no answer settles it: cancelled or killed mid-call,
+   timed out, a failure status whose answer reports no usage). A not-sent call costs nothing and
+   releases its reservation. A known call counts the charge its answer reports; an answer that
+   refuses the request before any work (authentication rejected) counts zero; a successful answer
+   that reports no charge figure counts the tool's configured price for the call, and the run's
+   `spend.basis` is then `estimated`. An unresolved call counts its worst case. All of this holds
    whatever the run's status. The result's `spend` adds `unresolved_usd` (the part of `usd` not
    settled by an answer) and the session adds `unresolved_usd` (the part of `spent_usd`), so a
    host shows "at most" rather than zero or a false exact figure.
@@ -142,7 +150,8 @@ CONTRACT.md and the schemas at a tag.
 12. **The `<tool>://session` resource.** It carries `contract` and `tool` like every resource.
     `budget_usd` and `remaining_usd` are null only together (uncapped);
     `remaining_usd = max(0, budget_usd - spent_usd - reserved_usd)`; amounts use the result
-    spend's rounding and compare to 1e-6 USD. The session id is a random UUID (v4) generated at
+    spend's rounding and compare to 1e-6 USD. `started` is RFC 3339 UTC like every timestamp;
+    `spent_usd` includes `unresolved_usd`. The session id is a random UUID (v4) generated at
     `serve` start; neither tool reloads configuration, so it is fixed for the process.
 
 **Tagging.** table-manners tags v0.2 only after the agreed schemas and representative fixtures
