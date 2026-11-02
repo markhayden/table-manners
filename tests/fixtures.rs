@@ -55,15 +55,14 @@ fn six_decimals(path: &Path, key: &str, value: &serde_json::Value) {
             }
         }
         serde_json::Value::Number(n) if key == "usd" || key.ends_with("_usd") => {
-            let text = n.to_string();
-            let decimals = match text.split_once('.') {
-                _ if text.contains(['e', 'E']) => usize::MAX,
-                Some((_, fraction)) => fraction.len(),
-                None => 0,
-            };
+            // Six decimals is a property of the amount, not of how it is spelled: serde_json
+            // writes 0.000001 as `1e-6`, which is exactly six decimals. The amount in millionths
+            // of a dollar must be a whole number.
+            let usd = n.as_f64().expect("a finite amount");
+            let micros = usd * 1_000_000.0;
             assert!(
-                decimals <= 6,
-                "{}: {key} is {text}, more than six decimals",
+                (micros - micros.round()).abs() < 1e-6,
+                "{}: {key} is {n}, more than six decimals",
                 path.display()
             );
         }

@@ -1,10 +1,10 @@
 # table-manners, v0.3.0
 
-Status: **v0.3.0 draft**, 2026-11-01, not binding until tagged. v0.2.0 (tagged and published
-2026-11-01) plus readiness without configuration, bound estimates and checked caps, report
-renders a host can embed, list image slots, credential failures, and a claim released when a
-request gets no run ("Changes from v0.2" below). The operations profile, portable artifacts (C2)
-and the replacement for MCP roots follow in v0.4.
+Status: **v0.3.0, ready to tag**, 2026-11-01. v0.2.0 plus readiness without configuration, bound
+estimates and checked caps, report renders a host can embed, list image slots, credential failures,
+and a claim released when a request gets no run ("Changes from v0.2" below). Both tools' fixtures
+validate (7): rascal M12, squint M9. The operations profile, portable artifacts (C2) and the
+replacement for MCP roots follow in v0.4.
 
 table-manners is the contract the waffle tools keep at a shared table: one external interface for
 squint (checks an image against what was asked), rascal (finds, masks and composites regions),
@@ -490,7 +490,8 @@ A **session** is one serving process's spend ledger. `<tool>://session`
   held by runs still going.
 - `budget_usd` and `remaining_usd` are null together, exactly when the session is uncapped; null
   is never a zero allowance. `remaining_usd = max(0, budget_usd - spent_usd - reserved_usd)`.
-- Amounts are US dollars. Tools write them with at most six decimals and clients compare them to
+- Amounts are US dollars. Tools write them with at most six decimals (a property of the value:
+  `1e-6` is six decimals) and clients compare them to
   1e-6.
 - A session is not a daily budget or a provider account balance. When a server restarts, a client
   sees a new id; what an interrupted session left unresolved stays unresolved in its runs.
