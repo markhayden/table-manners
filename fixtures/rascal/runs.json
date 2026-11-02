@@ -1,5 +1,5 @@
 {
-  "contract": "0.2.0",
+  "contract": "0.3.0",
   "next_cursor": "run-1767225600005-1",
   "runs": [
     {
@@ -455,6 +455,6 @@
   ],
   "tool": {
     "name": "rascal",
-    "version": "0.1.0"
+    "version": "0.1.1"
   }
 }
