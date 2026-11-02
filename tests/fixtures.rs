@@ -1,14 +1,22 @@
 //! Each tool's conformance fixtures (CONTRACT.md 7, item 7) are valid against the schemas and
 //! read into the Rust types: `fixtures/<tool>/describe.json` and every `describe-*.json` a
 //! description, every `estimate-*.json` an estimate, every `run-*.json` a result, every
-//! `runs*.json` a runs page, `session.json` a session and every `refusal-*.json` a refusal's data; every dollar amount has at most six decimals (4.6). The tool
-//! generates them from its own code and keeps its copy current in its own CI; here they are held
-//! to the contract.
+//! `runs*.json` a runs page, `session.json` and every `session-*.json` a session, every
+//! `refusal-*.json` a refusal's data; for the operations profile every `artifact-*.json` an
+//! artifact resource, every `export-*.json` and `import-*.json` an export or import response, and
+//! each of these three a refusal's data instead when it carries `reason`; every `bundle-*/`
+//! directory an invocation bundle whose `invocation.json` is a manifest and whose every listed
+//! member exists beside it with the digest the manifest states. Every dollar amount has at most
+//! six decimals (4.6). Any other file fails. The tool generates them from its own code and keeps
+//! its copy current in its own CI; here they are held to the contract.
 
 use std::path::{Path, PathBuf};
 
+use sha2::{Digest, Sha256};
+use table_manners::operations::{ArtifactResource, ExportResponse, ImportResponse};
 use table_manners::{
-    CONTRACT_VERSION, Description, Estimate, Refusal, RunResult, RunsList, SCHEMAS, Session,
+    CONTRACT_VERSION, Description, Estimate, InvocationBundle, Refusal, RunResult, RunsList,
+    SCHEMAS, Session,
 };
 
 struct Embedded;
@@ -75,6 +83,70 @@ fn valid(validator: &jsonschema::Validator, path: &Path, doc: &serde_json::Value
     assert!(errors.is_empty(), "{}: {errors:?}", path.display());
 }
 
+/// Every contract version in a document (a bundle carries one per step and per result) is this
+/// crate's.
+fn at_this_version(path: &Path, value: &serde_json::Value) {
+    match value {
+        serde_json::Value::Object(map) => {
+            for (k, v) in map {
+                if k == "contract" {
+                    assert_eq!(
+                        v,
+                        CONTRACT_VERSION,
+                        "{}: fixtures are at this contract's version",
+                        path.display()
+                    );
+                } else {
+                    at_this_version(path, v);
+                }
+            }
+        }
+        serde_json::Value::Array(items) => {
+            for v in items {
+                at_this_version(path, v);
+            }
+        }
+        _ => {}
+    }
+}
+
+fn sha256_hex(path: &Path) -> String {
+    let bytes = std::fs::read(path).unwrap_or_else(|e| panic!("{}: {e}", path.display()));
+    Sha256::digest(&bytes)
+        .iter()
+        .map(|b| format!("{b:02x}"))
+        .collect()
+}
+
+/// A `bundle-*/` directory: `invocation.json` is a manifest, and every member it lists exists
+/// beside it with the digest it states (an input's `file_sha256`, an artifact's `sha256`).
+fn bundle(validator: &jsonschema::Validator, dir: &Path) {
+    let manifest = dir.join("invocation.json");
+    assert!(manifest.exists(), "{}: no invocation.json", dir.display());
+    let doc = read(&manifest);
+    six_decimals(&manifest, "", &doc);
+    at_this_version(&manifest, &doc);
+    valid(validator, &manifest, &doc);
+    let b: InvocationBundle = serde_json::from_value(doc).expect("an InvocationBundle");
+    for step in &b.steps {
+        let members = step
+            .inputs
+            .iter()
+            .map(|i| (&i.member, &i.image.file_sha256))
+            .chain(step.artifacts.iter().map(|a| (&a.member, &a.sha256)));
+        for (member, digest) in members {
+            let path = dir.join(member);
+            assert!(path.is_file(), "{}: member {member} missing", dir.display());
+            assert_eq!(
+                &sha256_hex(&path),
+                digest,
+                "{}: member {member} is not the bytes the manifest names",
+                dir.display()
+            );
+        }
+    }
+}
+
 #[test]
 fn every_tools_fixtures_hold_to_the_contract() {
     let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("fixtures");
@@ -84,6 +156,10 @@ fn every_tools_fixtures_hold_to_the_contract() {
     let session = validator("urn:table-manners:core:session");
     let refusal = validator("urn:table-manners:core:refusal");
     let estimate = validator("urn:table-manners:core:estimate");
+    let manifest = validator("urn:table-manners:core:invocation-bundle");
+    let artifact = validator("urn:table-manners:operations:artifact");
+    let export = validator("urn:table-manners:operations:export-response");
+    let import = validator("urn:table-manners:operations:import-response");
     let mut tools: Vec<PathBuf> = std::fs::read_dir(&root)
         .expect("fixtures/")
         .map(|e| e.expect("entry").path())
@@ -107,16 +183,19 @@ fn every_tools_fixtures_hold_to_the_contract() {
                 .expect("name")
                 .to_string_lossy()
                 .into_owned();
-            let doc = read(&path);
-            six_decimals(&path, "", &doc);
-            if let Some(version) = doc.get("contract") {
-                assert_eq!(
-                    version,
-                    CONTRACT_VERSION,
-                    "{}: fixtures are at this contract's version",
+            if path.is_dir() {
+                assert!(
+                    file.starts_with("bundle-"),
+                    "{}: not a fixture this test knows",
                     path.display()
                 );
+                bundle(&manifest, &path);
+                continue;
             }
+            let doc = read(&path);
+            six_decimals(&path, "", &doc);
+            at_this_version(&path, &doc);
+            let refused = doc.get("reason").is_some();
             if file == "describe.json" || file.starts_with("describe-") {
                 valid(&description, &path, &doc);
                 let d: Description = serde_json::from_value(doc).expect("a Description");
@@ -134,7 +213,26 @@ fn every_tools_fixtures_hold_to_the_contract() {
                 valid(&runs, &path, &doc);
                 let l: RunsList = serde_json::from_value(doc).expect("a RunsList");
                 assert_eq!(l.tool.name, name, "{}: the tool's own name", path.display());
-            } else if file == "session.json" {
+            } else if (file.starts_with("artifact-")
+                || file.starts_with("export-")
+                || file.starts_with("import-"))
+                && refused
+            {
+                valid(&refusal, &path, &doc);
+                let _: Refusal = serde_json::from_value(doc).expect("a Refusal");
+            } else if file.starts_with("artifact-") {
+                valid(&artifact, &path, &doc);
+                let a: ArtifactResource = serde_json::from_value(doc).expect("an ArtifactResource");
+                assert_eq!(a.tool.name, name, "{}: the tool's own name", path.display());
+            } else if file.starts_with("export-") {
+                valid(&export, &path, &doc);
+                let e: ExportResponse = serde_json::from_value(doc).expect("an ExportResponse");
+                assert_eq!(e.tool.name, name, "{}: the tool's own name", path.display());
+            } else if file.starts_with("import-") {
+                valid(&import, &path, &doc);
+                let i: ImportResponse = serde_json::from_value(doc).expect("an ImportResponse");
+                assert_eq!(i.tool.name, name, "{}: the tool's own name", path.display());
+            } else if file == "session.json" || file.starts_with("session-") {
                 valid(&session, &path, &doc);
                 let s: Session = serde_json::from_value(doc).expect("a Session");
                 assert_eq!(s.tool.name, name, "{}: the tool's own name", path.display());

@@ -1,5 +1,5 @@
 {
-  "contract": "0.3.0",
+  "contract": "0.4.0",
   "tool": {
     "name": "tidy",
     "version": "0.1.0"
@@ -18,6 +18,19 @@
   "finished": "2026-10-30T19:10:21.904Z",
   "duration_ms": 39786,
   "input_identity": "sha256:7777777777777777777777777777777777777777777777777777777777777777",
+  "invocation": {
+    "action": "lint",
+    "arguments": {
+      "path_glob": "src/**/*.rs"
+    },
+    "effective": {
+      "model": "lint-model-1",
+      "config_identity": "sha256:c0f1000000000000000000000000000000000000000000000000000000000000"
+    },
+    "requirements": [
+      "tidy.toml"
+    ]
+  },
   "spend": {
     "usd": 0,
     "unresolved_usd": 0,

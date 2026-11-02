@@ -1,0 +1,9 @@
+{
+  "type": "Mask",
+  "schema_versions": [
+    1
+  ],
+  "purpose": "zones, profile, prescriptions",
+  "portable": "bundle",
+  "preview": true
+}

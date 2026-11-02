@@ -1,0 +1,6 @@
+{
+  "name": "mask",
+  "type": "Mask",
+  "required": true,
+  "purpose": "the mask"
+}

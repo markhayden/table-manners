@@ -1,0 +1,47 @@
+{
+  "contract": "0.4.0",
+  "profiles": [],
+  "tool": {
+    "name": "tidy",
+    "version": "0.1.0",
+    "purpose": "Checks a Markdown document against a house style."
+  },
+  "actions": [
+    {
+      "name": "lint",
+      "title": "Lint",
+      "kind": "task",
+      "purpose": "Lists every style rule a document breaks.",
+      "params_schema": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "path"
+        ]
+      },
+      "cost": {
+        "may_spend": false
+      },
+      "readiness": {
+        "state": "ready",
+        "requirements": []
+      },
+      "duration": {
+        "typical_s": 1,
+        "max_s": 30
+      },
+      "renders": []
+    }
+  ],
+  "progress_interval_s": 10,
+  "resources": [
+    "tidy://runs",
+    "tidy://run/{id}/run.json",
+    "tidy://run/{id}/journal"
+  ],
+  "artifact_types": []
+}

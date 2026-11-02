@@ -5,8 +5,8 @@ profile (operations as ordinary actions with typed ports, artifact types and ref
 `binding` refusal, artifacts in the result, the reserved `export` and `import` tools), the kind and
 group of every action, the effective invocation on every result with one generic command line and
 a portable invocation bundle, and allowed directories given at start in place of MCP roots
-("Changes from v0.3" below). The schemas, types and examples follow once this text is approved;
-until then `schemas/` is v0.3.0's.
+("Changes from v0.3" below). The text was approved on 2026-11-01; the schemas, types and examples
+on this branch are v0.4.0's.
 
 table-manners is the contract the waffle tools keep at a shared table: one external interface for
 squint (checks an image against what was asked), rascal (finds, masks and composites regions),
@@ -738,7 +738,8 @@ call can be repeated from another directory, by another client or on another mac
 - `effective` is the estimate's object (4.5): `model`, `config_identity` and any `x-<tool>`
   fields (squint's rule-set and catalog versions, rascal's constant sets and filler).
 - `requirements` lists the `name` of each readiness requirement (3.1) the call used, never a
-  value.
+  value. For a `file` or `config` requirement it is the file name only (`rascal.toml`), never a
+  path.
 
 **The command line.** Every tool provides one generic command that runs any action from its MCP
 arguments:

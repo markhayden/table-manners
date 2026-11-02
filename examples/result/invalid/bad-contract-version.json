@@ -18,6 +18,41 @@
   "finished": "2026-10-30T19:10:21.904Z",
   "duration_ms": 39786,
   "input_identity": "sha256:7777777777777777777777777777777777777777777777777777777777777777",
+  "invocation": {
+    "action": "check",
+    "arguments": {
+      "candidate": {
+        "expect": {
+          "file_sha256": "a1b2000000000000000000000000000000000000000000000000000000000000",
+          "width": 1024,
+          "height": 1024,
+          "projection": "flat",
+          "topology": "bounded"
+        }
+      },
+      "source": {
+        "expect": {
+          "file_sha256": "c3d4000000000000000000000000000000000000000000000000000000000000",
+          "width": 1024,
+          "height": 1024,
+          "projection": "flat",
+          "topology": "bounded"
+        }
+      },
+      "prompt": "a lighthouse at dusk"
+    },
+    "effective": {
+      "model": "claude-sonnet-5-5",
+      "config_identity": "sha256:c0f1000000000000000000000000000000000000000000000000000000000000",
+      "x-squint": {
+        "rules": "2026.10"
+      }
+    },
+    "requirements": [
+      "squint.toml",
+      "ANTHROPIC_API_KEY"
+    ]
+  },
   "spend": {
     "usd": 0.0389,
     "unresolved_usd": 0,

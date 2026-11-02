@@ -1,0 +1,15 @@
+{
+  "type": "rascal:Plan",
+  "schema_version": 1,
+  "tool": "rascal",
+  "identity": "sha256:c4a1000000000000000000000000000000000000000000000000000000000000",
+  "frame": null,
+  "on": {
+    "file_sha256": "3f9a000000000000000000000000000000000000000000000000000000000000",
+    "width": 2048,
+    "height": 1024,
+    "projection": "equirectangular",
+    "topology": "wrap"
+  },
+  "resource": "rascal://artifact/sha256:c4a1000000000000000000000000000000000000000000000000000000000000"
+}

@@ -1,0 +1,7 @@
+{
+  "port": null,
+  "problem": "unresolved",
+  "expected": "an artifact this store holds",
+  "got": "sha256:9c1e000000000000000000000000000000000000000000000000000000000000",
+  "remedy": "import its bundle with the import tool, or start rascal on the workspace that made it"
+}

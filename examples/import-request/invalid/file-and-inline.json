@@ -1,0 +1,9 @@
+{
+  "file": {
+    "path": "/abs/host/library/sha256-9c1e.mask.tar"
+  },
+  "inline": {
+    "media_type": "application/json",
+    "data": "eyJraW5kIjoibGluZSJ9"
+  }
+}

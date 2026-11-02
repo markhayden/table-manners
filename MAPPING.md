@@ -5,9 +5,36 @@ The contract was drawn from both tools as they stand on 2026-10-30: rascal at `9
 field by field, where each differs today. It is a work list for each tool's conformance milestone,
 not part of the contract; it is deleted once both conform.
 
-**Status 2026-11-01.** Both tools conform to v0.2.0 and pin `=0.2.0` from crates.io: rascal since
-milestone M11 (tag `m11`), squint since milestone M8 (tag `m8`). Wafflery (formerly Wafflehouse) pins `=0.2.0` as a
-client. Both tools conform to v0.3.0 by path, waiting on its publication; the work list is below. The v0.1 columns below are kept for review.
+**Status 2026-11-01.** v0.3.0 is published; rascal (M12), squint (M9) and Wafflery (formerly
+Wafflehouse, as a client) pin `=0.3.0`. v0.4 is on branch `v0.4`; its work list is first below. The
+v0.1 columns below are kept for review.
+
+## v0.4 (operations, portable invocations, allowed directories)
+
+Work for each tool's next conformance milestone (rascal's M10 for the operations profile);
+Wafflery adopts it as the client (kinds and groups, artifact references and the binding refusal,
+`export`/`import`, invocation bundles, `--allow-dir` in its argv). Both tools build against this
+branch by path until v0.4.0 is published, then pin `=0.4.0`.
+
+| contract | squint | rascal |
+|---|---|---|
+| every action carries `kind` (`task`, `operation`, `utility`); optional `group`, listed in the core's `vocabulary.group` (3) | to do | to do |
+| `vocabulary` is a core object; the images profile's four lists live in it as before (3, 11.2) | to do | to do |
+| `export` and `import` are reserved action names, beside `describe` and `estimate` (3, 5) | to do | to do |
+| `profiles` lists `operations` (with `images`); top-level `artifact_types` with `schema_versions`, `portable` and `preview` (1, 3.3) | to do | to do |
+| artifact references: type, schema version, tool, identity (never a workspace id), opaque frame, optional `on`, resource; accepted wherever an artifact is taken (3.4, 10.1) | to do | to do |
+| operations: `kind: "operation"` with `ports` (`in`, `out`), in-ports in the MCP input schema, `images`/`locations` `[]`; every call a run (4.7) | to do | to do |
+| the `binding` refusal before any run, from calls and `estimate`: per-reference `port`, `index` for `many` items, `problem`, `expected`, `got`, `remedy` for `unresolved`; releases the `client_run_id` (4.5, 4.7) | to do | to do |
+| estimate bindings digest artifact references by identity (4.5) | to do | to do |
+| `artifacts {in, out}` in every result, tasks' native outputs included, a `preview` on each out entry whose type has one; images and locations also in `images`/`locations` (4.7, 11.1) | to do | to do |
+| `<tool>://artifact/{identity}` and `/preview`; a missed read is the `binding` refusal with `port: null` (4.7) | to do | to do |
+| `export` and `import` tools and `<tool> export --json`/`import --json`: controls, never runs; refusals `binding` or `invalid_arguments`; import idempotent by identity (5.1) | to do | to do |
+| `invocation` on every result (null only on an unresolved `invalid` run): resolved arguments without locators, `effective`, requirement names (file names only, never paths) (2.3, 4.8) | to do | to do |
+| `<tool> call <action> --arguments <file> [--config] [--allow-dir]…` and `--bundle` replay (4.8, 4.9) | to do | to do |
+| invocation bundle manifest and byte-stable ustar layout (host-built; tools replay it) (4.9) | to do | to do |
+| MCP roots gone: `serve`/`call`/`import --allow-dir <abs>`, narrowed by configuration, none means every path refused, symlinks resolved; never write at a caller path (5, 5.2, 10.1) | to do | to do |
+| `<tool>://session` adds `allowed_dirs` (4.6) | to do | to do |
+| v0.4 fixtures (7, item 7) | to do | to do |
 
 ## v0.3 (readiness, bound estimates, renders)
 

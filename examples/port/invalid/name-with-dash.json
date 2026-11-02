@@ -1,0 +1,6 @@
+{
+  "name": "soft-mask",
+  "type": "rascal:Mask",
+  "required": true,
+  "purpose": "the mask"
+}

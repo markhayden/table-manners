@@ -1,5 +1,5 @@
 {
-  "contract": "0.3.0",
+  "contract": "0.4.0",
   "tool": {
     "name": "rascal",
     "version": "0.1.0"
@@ -10,5 +10,9 @@
   "spent_usd": 0.16,
   "unresolved_usd": 0.04,
   "reserved_usd": 0.04,
-  "remaining_usd": -0.08
+  "remaining_usd": -0.08,
+  "allowed_dirs": [
+    "/abs/host/library",
+    "/abs/host/execution"
+  ]
 }

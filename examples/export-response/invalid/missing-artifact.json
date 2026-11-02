@@ -1,0 +1,13 @@
+{
+  "contract": "0.4.0",
+  "tool": {
+    "name": "rascal",
+    "version": "0.1.0"
+  },
+  "file": {
+    "path": "/abs/rascal-data/exports/sha256-9c1e000000000000000000000000000000000000000000000000000000000000.mask.tar",
+    "sha256": "e1a0000000000000000000000000000000000000000000000000000000000000",
+    "bytes": 1832448,
+    "media_type": "application/x-tar"
+  }
+}

@@ -1,6 +1,6 @@
 //! table-manners, the shared contract of the waffle tools (CONTRACT.md): serde types for its
 //! shared objects and the JSON Schemas they match. The core's types are at the root; the images
-//! profile's are in [`images`]. No logic: a tool computes digests, verifies references and writes
+//! profile's are in [`images`] and the operations profile's in [`operations`]. No logic: a tool computes digests, verifies references and writes
 //! results itself, and validates against [`SCHEMAS`] in its own tests.
 //!
 //! Section numbers in these docs are CONTRACT.md's.
@@ -10,9 +10,10 @@ use std::collections::BTreeMap;
 use serde::{Deserialize, Serialize};
 
 pub mod images;
+pub mod operations;
 
 /// The contract version this crate describes; every result and description carries it.
-pub const CONTRACT_VERSION: &str = "0.3.0";
+pub const CONTRACT_VERSION: &str = "0.4.0";
 
 /// Every schema as `($id, text)`. References between them use the `$id`s, so a validator needs a
 /// retriever that serves this list and nothing else.
@@ -61,6 +62,46 @@ pub const SCHEMAS: &[(&str, &str)] = &[
         "urn:table-manners:core:estimate",
         include_str!("../schemas/core/estimate.json"),
     ),
+    (
+        "urn:table-manners:core:invocation-bundle",
+        include_str!("../schemas/core/invocation-bundle.json"),
+    ),
+    (
+        "urn:table-manners:operations:artifact-type",
+        include_str!("../schemas/operations/artifact-type.json"),
+    ),
+    (
+        "urn:table-manners:operations:artifact-ref",
+        include_str!("../schemas/operations/artifact-ref.json"),
+    ),
+    (
+        "urn:table-manners:operations:artifact",
+        include_str!("../schemas/operations/artifact.json"),
+    ),
+    (
+        "urn:table-manners:operations:port",
+        include_str!("../schemas/operations/port.json"),
+    ),
+    (
+        "urn:table-manners:operations:binding",
+        include_str!("../schemas/operations/binding.json"),
+    ),
+    (
+        "urn:table-manners:operations:export-request",
+        include_str!("../schemas/operations/export-request.json"),
+    ),
+    (
+        "urn:table-manners:operations:export-response",
+        include_str!("../schemas/operations/export-response.json"),
+    ),
+    (
+        "urn:table-manners:operations:import-request",
+        include_str!("../schemas/operations/import-request.json"),
+    ),
+    (
+        "urn:table-manners:operations:import-response",
+        include_str!("../schemas/operations/import-response.json"),
+    ),
 ];
 
 /// A profile: a named set of additions to the core's objects (1).
@@ -69,6 +110,8 @@ pub const SCHEMAS: &[(&str, &str)] = &[
 pub enum Profile {
     /// Tools that take and return images (part 2, [`images`]).
     Images,
+    /// Single steps a host runs alone on typed artifacts ([`operations`]); requires `images`.
+    Operations,
 }
 
 /// A run's result (2): the MCP result's `structuredContent`, the run resource and `run.json`.
@@ -95,6 +138,9 @@ pub struct RunResult {
     pub duration_ms: u64,
     /// `sha256:<hex>` over the resolved inputs and parameters, by the tool's recipe.
     pub input_identity: String,
+    /// What the call resolved to (4.8); none only on an `invalid` run whose arguments did not
+    /// resolve.
+    pub invocation: Option<Invocation>,
     /// What the run cost.
     pub spend: Spend,
     /// Whether the paid step came from the cache.
@@ -105,10 +151,29 @@ pub struct RunResult {
     /// Images profile (11.1): the locations taken in and produced.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub locations: Option<images::Locations>,
+    /// Operations profile (4.7): the artifacts taken through ports and made.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub artifacts: Option<operations::Artifacts>,
     /// Caveats on a run, in sentences.
     pub notes: Vec<String>,
     /// The tool's own.
     pub body: serde_json::Map<String, serde_json::Value>,
+}
+
+/// What a call resolved to (4.8), so it can be repeated from another directory, by another client
+/// or on another machine.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct Invocation {
+    /// The action's name.
+    pub action: String,
+    /// The arguments as resolved: defaults applied, each image as `{"expect": <reference>}` with
+    /// no locator, each artifact as its reference, delivery-only arguments left out.
+    pub arguments: serde_json::Map<String, serde_json::Value>,
+    /// What the call used where its arguments left the choice to the tool (4.5).
+    pub effective: Effective,
+    /// The name of each readiness requirement the call used; never a value.
+    pub requirements: Vec<String>,
 }
 
 /// A tool's name and version.
@@ -251,11 +316,14 @@ pub struct Description {
     pub profiles: Vec<Profile>,
     /// The tool.
     pub tool: DescribedTool,
-    /// One per MCP tool, the reserved `describe` and `estimate` excepted.
+    /// One per MCP tool, the reserved `describe`, `estimate`, `export` and `import` excepted.
     pub actions: Vec<Action>,
-    /// Images profile (11.2): every word the tool emits in a location.
+    /// Word lists (3): the core's `group` and the images profile's (11.2).
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub vocabulary: Option<images::Vocabulary>,
+    pub vocabulary: Option<Vocabulary>,
+    /// Operations profile (3.3): every type the tool's ports name, except `image`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub artifact_types: Option<Vec<operations::ArtifactType>>,
     /// Images profile (11.2): size limits.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub limits: Option<images::Limits>,
@@ -288,6 +356,11 @@ pub struct Action {
     pub name: String,
     /// A short title.
     pub title: String,
+    /// What kind of action it is; a host shows actions by kind.
+    pub kind: ActionKind,
+    /// A word of the tool's own that sorts actions within a kind, listed in `vocabulary.group`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub group: Option<String>,
     /// What it does, in a sentence.
     pub purpose: String,
     /// A JSON Schema for the arguments other than those a profile adds.
@@ -301,6 +374,9 @@ pub struct Action {
     /// Images profile (11.2): what it returns.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub outputs: Option<images::Outputs>,
+    /// Operations profile (4.7): typed inputs and outputs; on every operation and no other kind.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub ports: Option<operations::Ports>,
     /// Whether and how it spends.
     pub cost: Cost,
     /// Whether it can run here, now (3.1).
@@ -309,6 +385,40 @@ pub struct Action {
     pub duration: Duration,
     /// Commands that render a run.
     pub renders: Vec<Render>,
+}
+
+/// What kind of action it is (3).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum ActionKind {
+    /// A whole job a person or agent asks for.
+    Task,
+    /// One step on typed artifacts, run alone (4.7); only in a tool that lists `operations`.
+    Operation,
+    /// Neither.
+    Utility,
+}
+
+/// The description's word lists (3). The core owns `group`; the images profile adds the words a
+/// tool emits in a location (9.2, 11.2), all four required with it.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct Vocabulary {
+    /// Every group an action names; required whenever any action has one.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub group: Option<Vec<String>>,
+    /// Images profile: `disposition` words.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub disposition: Option<Vec<String>>,
+    /// Images profile: `confidence` words.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub confidence: Option<Vec<String>>,
+    /// Images profile: `evidence` words.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub evidence: Option<Vec<String>>,
+    /// Images profile: `score_kind` words.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub score_kind: Option<Vec<String>>,
 }
 
 /// Whether and how an action spends.
@@ -502,16 +612,19 @@ pub struct Session {
     pub reserved_usd: f64,
     /// `max(0, budget_usd - spent_usd - reserved_usd)`; none exactly when `budget_usd` is.
     pub remaining_usd: Option<f64>,
+    /// The directories the session reads caller paths from (5.2): absolute, symlinks resolved,
+    /// narrowed by the configuration; empty when every path is refused.
+    pub allowed_dirs: Vec<String>,
 }
 
-/// The `data` of a JSON-RPC `-32602` error the contract names (4.4).
+/// The `data` of a JSON-RPC `-32602` error the contract names (3.1, 4.4, 4.5, 4.7, 5.1).
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct Refusal {
     /// Why.
     pub reason: RefusalReason,
-    /// `client_run_id_reused`: the earlier request's run, none while it has none;
-    /// `not_ready`: none.
+    /// `client_run_id_reused`: the earlier request's run, none while it has none; every other
+    /// reason: none.
     pub run: Option<RunRef>,
     /// `not_ready`: the requirements the call needs that are missing or invalid.
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -519,6 +632,9 @@ pub struct Refusal {
     /// `invalid_arguments`: what was wrong (`usage` or `input`, not retryable).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorInfo>,
+    /// `binding`: one entry per reference that failed, in port order (4.7).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub bindings: Option<Vec<operations::Binding>>,
 }
 
 /// The refusals the contract names.
@@ -529,8 +645,10 @@ pub enum RefusalReason {
     ClientRunIdReused,
     /// The call needs a requirement that is missing or invalid (3.1).
     NotReady,
-    /// An estimate's request was wrong (4.5).
+    /// A control's request was wrong: an estimate (4.5), an export or an import (5.1).
     InvalidArguments,
+    /// An operation's artifacts did not bind, or a read named an identity not held (4.7).
+    Binding,
 }
 
 /// What the reserved `estimate` tool returns (4.5): the worst case of one exact call, bound to
@@ -566,7 +684,8 @@ pub struct Estimate {
     pub expires: String,
 }
 
-/// What an estimated call would use (4.5).
+/// What a call uses where its arguments leave the choice to the tool (4.5); also an
+/// [`Invocation`]'s (4.8).
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Effective {
     /// The model or endpoint; none when the action calls none.
@@ -588,4 +707,93 @@ pub enum EstimateRefusal {
     Budget,
     /// The action is not ready.
     Readiness,
+}
+
+/// `invocation.json`, the manifest of a portable invocation bundle (4.9). A host builds it; no tool
+/// does.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct InvocationBundle {
+    /// 1.
+    pub bundle_version: u32,
+    /// The calls in order; a single call is one step.
+    pub steps: Vec<BundleStep>,
+}
+
+/// One call in an invocation bundle (4.9).
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct BundleStep {
+    /// The contract version the tool conformed to.
+    pub contract: String,
+    /// The tool.
+    pub tool: Tool,
+    /// What the call resolved to (4.8).
+    pub invocation: Invocation,
+    /// The original `run.json`.
+    pub result: Box<RunResult>,
+    /// Each image the step took, with its member.
+    pub inputs: Vec<BundleInput>,
+    /// Each native input with its export file.
+    pub artifacts: Vec<BundleArtifact>,
+    /// Each input left out on purpose.
+    pub reference_only: Vec<ReferenceOnly>,
+    /// Each native input that could not be exported.
+    pub unportable: Vec<Unportable>,
+}
+
+/// An image a bundled step took: by `slot` (images profile) or `port` (operations), exactly one.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct BundleInput {
+    /// The image slot it came through.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub slot: Option<String>,
+    /// The port it came through.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub port: Option<String>,
+    /// Its reference.
+    pub image: images::ImageReference,
+    /// `inputs/<file_sha256>.<ext>`: the caller's file, byte for byte.
+    pub member: String,
+}
+
+/// A native input of a bundled step, with its export file (5.1).
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct BundleArtifact {
+    /// The port it came through.
+    pub port: String,
+    /// Its reference.
+    pub artifact: operations::ArtifactRef,
+    /// `artifacts/<identity>.<ext>`, the identity's `:` written `-`.
+    pub member: String,
+    /// SHA-256 of the export file, lowercase hex.
+    pub sha256: String,
+}
+
+/// An input left out of a bundle on purpose: by `slot` or `port`, exactly one.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct ReferenceOnly {
+    /// The image slot.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub slot: Option<String>,
+    /// The port.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub port: Option<String>,
+    /// Why, in a sentence.
+    pub why: String,
+}
+
+/// A native input a bundle could not carry; the bundle is workspace-dependent.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct Unportable {
+    /// The port it came through.
+    pub port: String,
+    /// Its reference.
+    pub artifact: operations::ArtifactRef,
+    /// Why: its type is `portable: none`, or its export failed.
+    pub reason: String,
 }

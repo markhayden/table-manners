@@ -1,0 +1,15 @@
+{
+  "contract": "0.4.0",
+  "tool": {
+    "name": "rascal",
+    "version": "0.1.0"
+  },
+  "id": "0b7e3c5a-6f1d-4c2e-9a8b-3d4e5f6a7b8c",
+  "started": "2026-10-31T18:02:11.530Z",
+  "budget_usd": null,
+  "spent_usd": 0.16,
+  "unresolved_usd": 0.04,
+  "reserved_usd": 0.04,
+  "remaining_usd": null,
+  "allowed_dirs": []
+}

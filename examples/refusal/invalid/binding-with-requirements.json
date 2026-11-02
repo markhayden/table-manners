@@ -1,0 +1,20 @@
+{
+  "reason": "binding",
+  "run": null,
+  "bindings": [
+    {
+      "port": "mask",
+      "problem": "unresolved",
+      "expected": "rascal:Mask v1",
+      "got": "sha256:9c1e000000000000000000000000000000000000000000000000000000000000",
+      "remedy": "import its bundle with the import tool"
+    }
+  ],
+  "requirements": [
+    {
+      "kind": "config",
+      "name": "rascal.toml",
+      "state": "missing"
+    }
+  ]
+}

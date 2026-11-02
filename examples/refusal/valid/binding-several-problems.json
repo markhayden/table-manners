@@ -1,0 +1,26 @@
+{
+  "reason": "binding",
+  "run": null,
+  "bindings": [
+    {
+      "port": "location",
+      "problem": "wrong_version",
+      "expected": "location v1",
+      "got": "location v2"
+    },
+    {
+      "port": "masks",
+      "index": 0,
+      "problem": "wrong_type",
+      "expected": "rascal:Mask v1",
+      "got": "rascal:Plan v1"
+    },
+    {
+      "port": "masks",
+      "index": 2,
+      "problem": "wrong_frame",
+      "expected": "a rascal:Mask in the frame of masks[0]",
+      "got": "a rascal:Mask in another frame"
+    }
+  ]
+}

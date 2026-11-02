@@ -231,7 +231,7 @@ pub enum ImageIn {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct PathIn {
-    /// An absolute path inside the client's roots.
+    /// An absolute path inside the session's allowed directories (5.2).
     pub path: String,
     /// The reference the tool must verify.
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -359,20 +359,6 @@ pub struct Outputs {
 pub enum LocationOutput {
     /// `locations.found`.
     Found,
-}
-
-/// The words a tool emits in a location (9.2).
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-#[serde(deny_unknown_fields)]
-pub struct Vocabulary {
-    /// `disposition` words.
-    pub disposition: Vec<String>,
-    /// `confidence` words.
-    pub confidence: Vec<String>,
-    /// `evidence` words.
-    pub evidence: Vec<String>,
-    /// `score_kind` words.
-    pub score_kind: Vec<String>,
 }
 
 /// Size limits.

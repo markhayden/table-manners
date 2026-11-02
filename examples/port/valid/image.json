@@ -1,0 +1,6 @@
+{
+  "name": "image",
+  "type": "image",
+  "required": true,
+  "purpose": "the frame"
+}
