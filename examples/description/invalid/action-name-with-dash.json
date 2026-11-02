@@ -1,5 +1,5 @@
 {
-  "contract": "0.3.0",
+  "contract": "0.4.0",
   "profiles": [
     "images"
   ],
@@ -12,6 +12,7 @@
     {
       "name": "source-fidelity",
       "title": "Source fidelity",
+      "kind": "task",
       "purpose": "Checks a candidate against its source and prompt.",
       "images": [
         {

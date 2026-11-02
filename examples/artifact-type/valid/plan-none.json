@@ -1,0 +1,9 @@
+{
+  "type": "rascal:Plan",
+  "schema_versions": [
+    1
+  ],
+  "purpose": "how a mask will be filled",
+  "portable": "none",
+  "preview": false
+}

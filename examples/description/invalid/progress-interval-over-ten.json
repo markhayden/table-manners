@@ -1,5 +1,5 @@
 {
-  "contract": "0.3.0",
+  "contract": "0.4.0",
   "profiles": [
     "images"
   ],
@@ -12,6 +12,7 @@
     {
       "name": "check",
       "title": "Source fidelity",
+      "kind": "task",
       "purpose": "Checks a candidate against its source and prompt.",
       "images": [
         {
@@ -108,6 +109,7 @@
     {
       "name": "estimate",
       "title": "Estimate",
+      "kind": "task",
       "purpose": "The worst-case spend of a check and the session budget left.",
       "images": [],
       "locations": [],

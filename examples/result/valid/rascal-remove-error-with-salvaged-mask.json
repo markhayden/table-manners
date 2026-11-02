@@ -1,5 +1,5 @@
 {
-  "contract": "0.3.0",
+  "contract": "0.4.0",
   "tool": {
     "name": "rascal",
     "version": "0.1.0"
@@ -22,6 +22,54 @@
   "finished": "2026-10-30T19:10:21.904Z",
   "duration_ms": 39786,
   "input_identity": "sha256:7777777777777777777777777777777777777777777777777777777777777777",
+  "invocation": {
+    "action": "remove",
+    "arguments": {
+      "image": {
+        "expect": {
+          "file_sha256": "3f9a000000000000000000000000000000000000000000000000000000000000",
+          "width": 2048,
+          "height": 1024,
+          "projection": "equirectangular",
+          "topology": "wrap"
+        }
+      },
+      "target": {
+        "image": {
+          "file_sha256": "3f9a000000000000000000000000000000000000000000000000000000000000",
+          "width": 2048,
+          "height": 1024,
+          "projection": "equirectangular",
+          "topology": "wrap"
+        },
+        "kind": "line",
+        "parts": [
+          {
+            "column": 0.5,
+            "width_px": 24
+          }
+        ],
+        "straddles_wrap": false,
+        "source": {
+          "tool": "rascal",
+          "version": "0.1.0",
+          "run": "r-9001"
+        }
+      },
+      "filler": "fal-bria"
+    },
+    "effective": {
+      "model": "fal-ai/bria/eraser",
+      "config_identity": "sha256:c0f1000000000000000000000000000000000000000000000000000000000000",
+      "x-rascal": {
+        "filler": "fal-bria"
+      }
+    },
+    "requirements": [
+      "rascal.toml",
+      "FAL_KEY"
+    ]
+  },
   "spend": {
     "usd": 0.06,
     "unresolved_usd": 0.06,
@@ -91,6 +139,40 @@
       }
     ],
     "found": []
+  },
+  "artifacts": {
+    "in": [],
+    "out": [
+      {
+        "port": "mask",
+        "artifact": {
+          "type": "rascal:Mask",
+          "schema_version": 1,
+          "tool": "rascal",
+          "identity": "sha256:9c3a000000000000000000000000000000000000000000000000000000000000",
+          "frame": "sha256:41ab000000000000000000000000000000000000000000000000000000000000",
+          "on": {
+            "file_sha256": "3f9a000000000000000000000000000000000000000000000000000000000000",
+            "width": 2048,
+            "height": 1024,
+            "projection": "equirectangular",
+            "topology": "wrap"
+          },
+          "resource": "rascal://artifact/sha256:9c3a000000000000000000000000000000000000000000000000000000000000"
+        },
+        "preview": {
+          "role": "preview",
+          "image": {
+            "file_sha256": "5d4a111111111111111111111111111111111111111111111111111111111111",
+            "width": 2048,
+            "height": 1024,
+            "projection": "equirectangular",
+            "topology": "wrap"
+          },
+          "resource": "rascal://artifact/sha256:9c3a000000000000000000000000000000000000000000000000000000000000/preview"
+        }
+      }
+    ]
   },
   "notes": [],
   "body": {}

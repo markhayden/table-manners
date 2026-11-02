@@ -1,0 +1,13 @@
+{
+  "reason": "binding",
+  "run": null,
+  "bindings": [
+    {
+      "port": "artifact",
+      "problem": "unresolved",
+      "expected": "an artifact this store holds",
+      "got": "sha256:c4a1000000000000000000000000000000000000000000000000000000000000",
+      "remedy": "import its bundle with the import tool"
+    }
+  ]
+}

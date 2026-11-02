@@ -5,7 +5,54 @@ evidence; none is binding until it lands in CONTRACT.md and the schemas at a tag
 
 **v0.2 carried C4** (run association and budget sessions, below).
 
-**v0.3 (draft in CONTRACT.md, 2026-11-01)** adopts, decided by the coordinating session that owns
+**v0.4 (draft in CONTRACT.md, 2026-11-01)** adopts, decided by the coordinating session that owns
+this repository, all ten recommendations of its v0.4 design memo, as written:
+
+- From rascal's M10 and Wafflehouse's R3, the **operations profile**: an operation is an ordinary
+  action with `kind: "operation"` and typed `ports`, so every op call is a run (no second result
+  shape, no envelope dialect); top-level `artifact_types` (shared `image` and `location`, tool
+  types `<tool>:<Name>`, `portable: bundle | json | none`, `preview`); the artifact reference
+  (type, schema version, tool, identity, opaque frame, optional `on` image, resource); the
+  `binding` refusal before any run, one entry per port with `wrong_type`, `wrong_version`,
+  `wrong_frame` or `unresolved` (with a remedy), from calls and estimates alike; `artifacts
+  {in, out}` with previews in the result; the `<tool>://artifact/{identity}` resource, which is
+  how a host reopens a saved binding after a restart or a workspace move (rascal PLAN 10.1 to
+  10.6, R3 accept 1 to 5).
+- From Wafflehouse's C2: the reserved `export` and `import` tools over the tools' own bundles
+  (paths in; the tool chooses where it writes); `invocation` on every result and one generic
+  `<tool> call <action> --arguments <file>` command; the host-built, byte-stable invocation
+  bundle, in which an unexportable native is listed as workspace-dependent and never replaced by
+  a rendering (rascal ADR 0022's rules).
+- From squint's item 2: MCP roots are dropped in favour of `serve --allow-dir <abs>` (repeatable,
+  narrowed by configuration, none meaning every path refused, symlinks resolved before the
+  check, the directories shown in the session resource), and tools never write at a
+  caller-given path. This also closes rascal's gap, which enforced no roots.
+- From Wafflehouse's C1: grouping by the contract's `kind` (`task | operation | utility`) and the
+  tool's optional `group`, listed in `vocabulary.group`; a host never parses names.
+
+**Left for later than v0.4:** bundling rascal's Plan, Series and BandProfile (declared
+`portable: none` meanwhile); reconstruction recipes (a possible `portable: recipe`); an artifact
+listing resource (the host keeps its own references); report asset relocation beyond the
+self-contained document render (C3); the MCP revision move; network transports; durable ledgers
+across processes; prompt localisation (R2); operations in squint, which has no native types.
+
+**v0.4: questions settled while drafting (2026-11-01)**, decided by the coordinating session and
+written into CONTRACT.md: the operations sections keep the core's numbering, and `operations`
+requires `images` (1); `vocabulary` is a core object (3); a preview is required only where the
+type declares `preview: true` (4.7); `image` is not listed in `artifact_types` and its identity is
+`sha256:<file_sha256>` (3.3, 3.4); an operation's image and location inputs are ports only, also
+listed in `images` and `locations` (4.7, 11.1); `artifacts` is required in every result of an
+operations tool, and a task lists the natives it made in `artifacts.out` (4.7); a missed artifact
+read reuses `binding` with `port: null`, and a binding entry carries a 0-based `index` for items
+of a `many` port (4.7); `invocation` is null only on an `invalid` run whose arguments did not
+resolve, and `requirements` lists names (4.8); the bundle manifest always has `steps`, and the tar
+headers follow rascal ADR 0022 (4.9); `--allow-dir` governs `serve`, `call` and `import`, and a
+person's own command-line paths to other commands stay theirs (5.2); `export --json` and
+`import --json` read a file or `-`, and a command-line refusal exits 64 with the refusal JSON
+(5.1); `export` and `import` stay responsive while a run holds the permit (4.5); an operations
+tool MUST accept artifact references wherever it takes an artifact (10.1).
+
+**v0.3 (published 2026-11-01)** adopts, decided by the coordinating session that owns
 this repository: squint's items 1, 3, 4 and 5 below; Wafflehouse's C1 (readiness and its paid-path
 follow-up: configuration lifetime, estimate binding, the per-call cap, and estimates as controls);
 C3 (render readiness, framing and lifetime); and option (a) of "a claim released when the request
@@ -222,3 +269,8 @@ From Wafflery's v0.3 client plan: a render's `command[0]` is the tool's own name
 the executable it serves (3.2); a document render writes one self-contained file outside the run
 directory (3.2); an estimate's wrong request is `-32602` with the `invalid_arguments` refusal
 carrying the error object (4.5).
+
+From rascal's M10 plan (settled): a replayed step that names an earlier step's output binds to that
+step's replayed output by port, not the recorded identity, and reports the change (4.9); the
+effective allowed directories are the overlap of `--allow-dir` and the configuration (5.2); a bad
+`--allow-dir` exits 64 at start in every tool.

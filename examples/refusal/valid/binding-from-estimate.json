@@ -1,0 +1,12 @@
+{
+  "reason": "binding",
+  "run": null,
+  "bindings": [
+    {
+      "port": "mask",
+      "problem": "wrong_frame",
+      "expected": "a rascal:Mask in the frame of image",
+      "got": "a rascal:Mask in a cropped frame"
+    }
+  ]
+}

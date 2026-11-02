@@ -1,0 +1,8 @@
+{
+  "port": "mask",
+  "problem": "unresolved",
+  "expected": "rascal:Mask v1",
+  "got": "sha256:9c1e000000000000000000000000000000000000000000000000000000000000",
+  "remedy": "import its bundle with the import tool",
+  "id": "mask-3"
+}

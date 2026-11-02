@@ -1,0 +1,17 @@
+{
+  "reason": "invalid_arguments",
+  "run": null,
+  "error": {
+    "code": "usage",
+    "retryable": false,
+    "reason": "unknown action"
+  },
+  "bindings": [
+    {
+      "port": "mask",
+      "problem": "wrong_type",
+      "expected": "rascal:Mask v1",
+      "got": "rascal:Plan v1"
+    }
+  ]
+}

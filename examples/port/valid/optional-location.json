@@ -1,0 +1,6 @@
+{
+  "name": "hint",
+  "type": "location",
+  "required": false,
+  "purpose": "where to look first"
+}

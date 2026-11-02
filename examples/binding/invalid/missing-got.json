@@ -1,0 +1,5 @@
+{
+  "port": "mask",
+  "problem": "wrong_type",
+  "expected": "rascal:Mask v1"
+}

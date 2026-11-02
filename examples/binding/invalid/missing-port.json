@@ -1,0 +1,5 @@
+{
+  "problem": "wrong_type",
+  "expected": "rascal:Mask v1",
+  "got": "rascal:Plan v1"
+}

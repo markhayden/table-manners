@@ -1,0 +1,10 @@
+{
+  "type": "location",
+  "schema_versions": [
+    1,
+    2
+  ],
+  "purpose": "where something is (9)",
+  "portable": "json",
+  "preview": true
+}

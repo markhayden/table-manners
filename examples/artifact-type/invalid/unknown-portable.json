@@ -1,0 +1,9 @@
+{
+  "type": "rascal:Mask",
+  "schema_versions": [
+    1
+  ],
+  "purpose": "zones, profile, prescriptions",
+  "portable": "recipe",
+  "preview": true
+}

@@ -1,5 +1,5 @@
 {
-  "contract": "0.3.0",
+  "contract": "0.4.0",
   "profiles": [],
   "tool": {
     "name": "tidy",
@@ -10,6 +10,7 @@
     {
       "name": "lint",
       "title": "Lint",
+      "kind": "task",
       "purpose": "Lists every style rule a document breaks.",
       "params_schema": {
         "type": "object",

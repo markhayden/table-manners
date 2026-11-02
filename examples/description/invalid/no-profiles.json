@@ -1,5 +1,5 @@
 {
-  "contract": "0.3.0",
+  "contract": "0.4.0",
   "tool": {
     "name": "tidy",
     "version": "0.1.0",
@@ -9,6 +9,7 @@
     {
       "name": "lint",
       "title": "Lint",
+      "kind": "task",
       "purpose": "Lists every style rule a document breaks.",
       "params_schema": {
         "type": "object",

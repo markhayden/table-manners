@@ -1,0 +1,7 @@
+{
+  "port": "location",
+  "problem": "wrong_version",
+  "expected": "location v1",
+  "got": "location v2",
+  "remedy": "export it from the rascal that wrote it and import it here"
+}

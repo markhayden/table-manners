@@ -1,0 +1,473 @@
+{
+  "contract": "0.4.0",
+  "profiles": [
+    "images",
+    "operations"
+  ],
+  "tool": {
+    "name": "rascal",
+    "version": "0.1.0",
+    "purpose": "Finds, masks and composites image regions."
+  },
+  "actions": [
+    {
+      "name": "remove",
+      "title": "Remove",
+      "kind": "task",
+      "purpose": "Masks a region and fills it with the configured filler.",
+      "images": [
+        {
+          "slot": "image",
+          "role": "source",
+          "required": true
+        }
+      ],
+      "locations": [
+        {
+          "slot": "target",
+          "kinds": [
+            "bbox",
+            "polygon",
+            "mask"
+          ],
+          "required": true
+        }
+      ],
+      "params_schema": {
+        "type": "object",
+        "properties": {
+          "filler": {
+            "type": "string",
+            "default": "lama"
+          },
+          "max_spend_usd": {
+            "type": "number",
+            "exclusiveMinimum": 0,
+            "description": "Lowers the configured per-call cap; never raises it."
+          }
+        }
+      },
+      "outputs": {
+        "images": [
+          "result",
+          "mask",
+          "preview"
+        ],
+        "locations": []
+      },
+      "cost": {
+        "may_spend": true,
+        "basis": "estimated"
+      },
+      "readiness": {
+        "state": "ready",
+        "requirements": [
+          {
+            "kind": "config",
+            "name": "rascal.toml",
+            "state": "present"
+          }
+        ]
+      },
+      "duration": {
+        "typical_s": 30,
+        "max_s": 600
+      },
+      "renders": []
+    },
+    {
+      "name": "line",
+      "title": "Line",
+      "kind": "operation",
+      "group": "find",
+      "purpose": "Finds the seam line of a panorama.",
+      "images": [],
+      "locations": [],
+      "params_schema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      },
+      "outputs": {
+        "images": [],
+        "locations": [
+          "found"
+        ]
+      },
+      "ports": {
+        "in": [
+          {
+            "name": "image",
+            "type": "image",
+            "required": true,
+            "purpose": "the panorama"
+          }
+        ],
+        "out": [
+          {
+            "name": "location",
+            "type": "location",
+            "required": true,
+            "purpose": "the seam line"
+          }
+        ]
+      },
+      "cost": {
+        "may_spend": false
+      },
+      "readiness": {
+        "state": "ready",
+        "requirements": [
+          {
+            "kind": "config",
+            "name": "rascal.toml",
+            "state": "present"
+          }
+        ]
+      },
+      "duration": {
+        "typical_s": 1,
+        "max_s": 60
+      },
+      "renders": []
+    },
+    {
+      "name": "rasterize",
+      "title": "Rasterize",
+      "kind": "operation",
+      "group": "refine",
+      "purpose": "Draws a location as a mask on its image.",
+      "images": [],
+      "locations": [],
+      "params_schema": {
+        "type": "object",
+        "properties": {
+          "constants": {
+            "enum": [
+              "rasterize-v1"
+            ]
+          }
+        },
+        "additionalProperties": false
+      },
+      "outputs": {
+        "images": [
+          "preview"
+        ],
+        "locations": []
+      },
+      "ports": {
+        "in": [
+          {
+            "name": "location",
+            "type": "location",
+            "required": true,
+            "purpose": "what to draw"
+          },
+          {
+            "name": "image",
+            "type": "image",
+            "required": true,
+            "purpose": "the frame"
+          }
+        ],
+        "out": [
+          {
+            "name": "mask",
+            "type": "rascal:Mask",
+            "required": true,
+            "purpose": "the mask"
+          }
+        ]
+      },
+      "cost": {
+        "may_spend": false
+      },
+      "readiness": {
+        "state": "ready",
+        "requirements": [
+          {
+            "kind": "config",
+            "name": "rascal.toml",
+            "state": "present"
+          }
+        ]
+      },
+      "duration": {
+        "typical_s": 1,
+        "max_s": 60
+      },
+      "renders": []
+    },
+    {
+      "name": "feather",
+      "title": "Feather",
+      "kind": "operation",
+      "group": "refine",
+      "purpose": "Softens a mask's edge.",
+      "images": [],
+      "locations": [],
+      "params_schema": {
+        "type": "object",
+        "properties": {
+          "sigma_px": {
+            "type": "number",
+            "exclusiveMinimum": 0
+          },
+          "constants": {
+            "enum": [
+              "feather-v1"
+            ]
+          }
+        },
+        "additionalProperties": false
+      },
+      "outputs": {
+        "images": [
+          "preview"
+        ],
+        "locations": []
+      },
+      "ports": {
+        "in": [
+          {
+            "name": "mask",
+            "type": "rascal:Mask",
+            "required": true,
+            "purpose": "the mask to soften"
+          }
+        ],
+        "out": [
+          {
+            "name": "mask",
+            "type": "rascal:Mask",
+            "required": true,
+            "purpose": "the softened mask"
+          }
+        ]
+      },
+      "cost": {
+        "may_spend": false
+      },
+      "readiness": {
+        "state": "ready",
+        "requirements": [
+          {
+            "kind": "config",
+            "name": "rascal.toml",
+            "state": "present"
+          }
+        ]
+      },
+      "duration": {
+        "typical_s": 1,
+        "max_s": 60
+      },
+      "renders": []
+    },
+    {
+      "name": "merge",
+      "title": "Merge",
+      "kind": "operation",
+      "group": "refine",
+      "purpose": "Unites masks drawn in one frame.",
+      "images": [],
+      "locations": [],
+      "params_schema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      },
+      "outputs": {
+        "images": [
+          "preview"
+        ],
+        "locations": []
+      },
+      "ports": {
+        "in": [
+          {
+            "name": "masks",
+            "type": "rascal:Mask",
+            "required": true,
+            "many": true,
+            "purpose": "the masks to unite"
+          }
+        ],
+        "out": [
+          {
+            "name": "mask",
+            "type": "rascal:Mask",
+            "required": true,
+            "purpose": "their union"
+          }
+        ]
+      },
+      "cost": {
+        "may_spend": false
+      },
+      "readiness": {
+        "state": "ready",
+        "requirements": [
+          {
+            "kind": "config",
+            "name": "rascal.toml",
+            "state": "present"
+          }
+        ]
+      },
+      "duration": {
+        "typical_s": 1,
+        "max_s": 60
+      },
+      "renders": []
+    },
+    {
+      "name": "plan",
+      "title": "Plan",
+      "kind": "operation",
+      "group": "prep",
+      "purpose": "Plans the fill of a mask.",
+      "images": [],
+      "locations": [],
+      "params_schema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      },
+      "outputs": {
+        "images": [],
+        "locations": []
+      },
+      "ports": {
+        "in": [
+          {
+            "name": "mask",
+            "type": "rascal:Mask",
+            "required": true,
+            "purpose": "the mask to fill"
+          }
+        ],
+        "out": [
+          {
+            "name": "plan",
+            "type": "rascal:Plan",
+            "required": true,
+            "purpose": "the fill plan"
+          }
+        ]
+      },
+      "cost": {
+        "may_spend": false
+      },
+      "readiness": {
+        "state": "ready",
+        "requirements": [
+          {
+            "kind": "config",
+            "name": "rascal.toml",
+            "state": "present"
+          }
+        ]
+      },
+      "duration": {
+        "typical_s": 1,
+        "max_s": 60
+      },
+      "renders": []
+    },
+    {
+      "name": "workspace_info",
+      "title": "Workspace",
+      "kind": "utility",
+      "group": "inspect",
+      "purpose": "Reports where the workspace is and what it holds.",
+      "images": [],
+      "locations": [],
+      "params_schema": {
+        "type": "object"
+      },
+      "outputs": {
+        "images": [],
+        "locations": []
+      },
+      "cost": {
+        "may_spend": false
+      },
+      "readiness": {
+        "state": "ready",
+        "requirements": [
+          {
+            "kind": "config",
+            "name": "rascal.toml",
+            "state": "present"
+          }
+        ]
+      },
+      "duration": {
+        "typical_s": 0.1,
+        "max_s": 5
+      },
+      "renders": [],
+      "ports": {
+        "in": [],
+        "out": []
+      }
+    }
+  ],
+  "vocabulary": {
+    "group": [
+      "find",
+      "refine",
+      "prep",
+      "inspect"
+    ],
+    "disposition": [],
+    "confidence": [],
+    "evidence": [],
+    "score_kind": [
+      "owlv2-detection"
+    ]
+  },
+  "artifact_types": [
+    {
+      "type": "location",
+      "schema_versions": [
+        1
+      ],
+      "purpose": "where something is (9)",
+      "portable": "json",
+      "preview": true
+    },
+    {
+      "type": "rascal:Mask",
+      "schema_versions": [
+        1
+      ],
+      "purpose": "zones, profile, prescriptions",
+      "portable": "bundle",
+      "preview": true
+    },
+    {
+      "type": "rascal:Plan",
+      "schema_versions": [
+        1
+      ],
+      "purpose": "how a mask will be filled",
+      "portable": "none",
+      "preview": false
+    }
+  ],
+  "limits": {
+    "inline_bytes": 33554432
+  },
+  "progress_interval_s": 10,
+  "resources": [
+    "rascal://runs{?cursor}",
+    "rascal://run/{id}/run.json",
+    "rascal://run/{id}/journal",
+    "rascal://session",
+    "rascal://artifact/{identity}",
+    "rascal://artifact/{identity}/preview"
+  ]
+}

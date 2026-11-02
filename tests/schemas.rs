@@ -3,15 +3,20 @@
 //! - Every `examples/<schema>/valid/*.json` validates and every `invalid/*.json` does not.
 //! - Every valid example deserialises into its Rust type and serialises back to the same JSON, so
 //!   the types and the schemas describe one shape.
-//! - [`SCHEMAS`] lists exactly the files under `schemas/core/` and `schemas/images/`.
+//! - [`SCHEMAS`] lists exactly the files under `schemas/core/`, `schemas/images/` and
+//!   `schemas/operations/`.
 
 use std::path::{Path, PathBuf};
 
 use serde::Serialize;
 use serde::de::DeserializeOwned;
 use table_manners::images::{ImageIn, ImageOut, ImageReference, Location};
+use table_manners::operations::{
+    ArtifactRef, ArtifactResource, ArtifactType, Binding, ExportRequest, ExportResponse,
+    ImportRequest, ImportResponse, Port,
+};
 use table_manners::{
-    Description, Estimate, Refusal, RunRef, RunResult, RunsList, SCHEMAS, Session,
+    Description, Estimate, InvocationBundle, Refusal, RunRef, RunResult, RunsList, SCHEMAS, Session,
 };
 
 fn root() -> PathBuf {
@@ -166,9 +171,59 @@ fn estimate() {
 }
 
 #[test]
+fn invocation_bundle() {
+    check::<InvocationBundle>("invocation-bundle");
+}
+
+#[test]
+fn artifact_type() {
+    check::<ArtifactType>("artifact-type");
+}
+
+#[test]
+fn artifact_ref() {
+    check::<ArtifactRef>("artifact-ref");
+}
+
+#[test]
+fn artifact() {
+    check::<ArtifactResource>("artifact");
+}
+
+#[test]
+fn port() {
+    check::<Port>("port");
+}
+
+#[test]
+fn binding() {
+    check::<Binding>("binding");
+}
+
+#[test]
+fn export_request() {
+    check::<ExportRequest>("export-request");
+}
+
+#[test]
+fn export_response() {
+    check::<ExportResponse>("export-response");
+}
+
+#[test]
+fn import_request() {
+    check::<ImportRequest>("import-request");
+}
+
+#[test]
+fn import_response() {
+    check::<ImportResponse>("import-response");
+}
+
+#[test]
 fn the_embedded_schemas_are_the_files_under_schemas() {
     let mut files: Vec<String> = Vec::new();
-    for dir in ["core", "images"] {
+    for dir in ["core", "images", "operations"] {
         for entry in std::fs::read_dir(root().join("schemas").join(dir)).expect("schemas/<dir>/") {
             let name = entry
                 .expect("entry")
@@ -220,12 +275,22 @@ fn every_example_directory_has_a_test() {
     assert_eq!(
         dirs,
         [
+            "artifact",
+            "artifact-ref",
+            "artifact-type",
+            "binding",
             "description",
             "estimate",
+            "export-request",
+            "export-response",
             "image-in",
             "image-out",
             "image-reference",
+            "import-request",
+            "import-response",
+            "invocation-bundle",
             "location",
+            "port",
             "refusal",
             "result",
             "run-ref",

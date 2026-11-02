@@ -1,5 +1,5 @@
 {
-  "contract": "0.3.0",
+  "contract": "0.4.0",
   "tool": {
     "name": "squint",
     "version": "0.2.0"
@@ -22,6 +22,7 @@
   "finished": "2026-10-30T19:10:21.904Z",
   "duration_ms": 39786,
   "input_identity": "sha256:7777777777777777777777777777777777777777777777777777777777777777",
+  "invocation": null,
   "spend": {
     "usd": 0,
     "unresolved_usd": 0,

@@ -1,0 +1,7 @@
+{
+  "port": "masks",
+  "index": -1,
+  "problem": "wrong_frame",
+  "expected": "a rascal:Mask in the frame of masks[0]",
+  "got": "a rascal:Mask in another frame"
+}

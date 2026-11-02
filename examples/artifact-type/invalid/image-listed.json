@@ -1,0 +1,9 @@
+{
+  "type": "image",
+  "schema_versions": [
+    1
+  ],
+  "purpose": "an image",
+  "portable": "bundle",
+  "preview": true
+}

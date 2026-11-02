@@ -1,0 +1,5 @@
+{
+  "name": "mask",
+  "type": "rascal:Mask",
+  "required": true
+}

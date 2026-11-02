@@ -1,0 +1,18 @@
+{
+  "reason": "binding",
+  "run": {
+    "id": "r-9003",
+    "resource": "rascal://run/r-9003/run.json",
+    "session_id": null,
+    "client_run_id": null
+  },
+  "bindings": [
+    {
+      "port": "mask",
+      "problem": "unresolved",
+      "expected": "rascal:Mask v1",
+      "got": "sha256:9c1e000000000000000000000000000000000000000000000000000000000000",
+      "remedy": "import its bundle with the import tool"
+    }
+  ]
+}

@@ -1,5 +1,5 @@
 {
-  "contract": "0.3.0",
+  "contract": "0.4.0",
   "tool": {
     "name": "rascal",
     "version": "0.1.0"
@@ -23,7 +23,7 @@
     "requirements": []
   },
   "session": {
-    "contract": "0.3.0",
+    "contract": "0.4.0",
     "tool": {
       "name": "rascal",
       "version": "0.1.0"
@@ -34,7 +34,11 @@
     "spent_usd": 0.16,
     "unresolved_usd": 0.04,
     "reserved_usd": 0.04,
-    "remaining_usd": null
+    "remaining_usd": null,
+    "allowed_dirs": [
+      "/abs/host/library",
+      "/abs/host/execution"
+    ]
   },
   "expires": "2026-11-01T20:15:00.000Z"
 }

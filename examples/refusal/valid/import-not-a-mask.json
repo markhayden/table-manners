@@ -1,0 +1,9 @@
+{
+  "reason": "invalid_arguments",
+  "run": null,
+  "error": {
+    "code": "input",
+    "retryable": false,
+    "reason": "the file is a PNG, not a rascal:Mask bundle; a rendering is never the artifact"
+  }
+}

@@ -1,0 +1,7 @@
+{
+  "name": "masks",
+  "type": "rascal:Mask",
+  "required": true,
+  "many": true,
+  "purpose": "the masks to unite"
+}

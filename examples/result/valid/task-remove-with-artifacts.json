@@ -1,0 +1,194 @@
+{
+  "contract": "0.4.0",
+  "tool": {
+    "name": "rascal",
+    "version": "0.1.0"
+  },
+  "action": "remove",
+  "run": {
+    "id": "r-9005",
+    "resource": "rascal://run/r-9005/run.json",
+    "session_id": "0b7e3c5a-6f1d-4c2e-9a8b-3d4e5f6a7b8c",
+    "client_run_id": "host-7f3a.r-9005",
+    "dir": "/abs/rascal-runs/r-9005"
+  },
+  "status": "completed",
+  "error": null,
+  "started": "2026-11-01T20:01:00.000Z",
+  "finished": "2026-11-01T20:01:01.250Z",
+  "duration_ms": 1250,
+  "input_identity": "sha256:7a05000000000000000000000000000000000000000000000000000000000000",
+  "invocation": {
+    "action": "remove",
+    "arguments": {
+      "image": {
+        "expect": {
+          "file_sha256": "3f9a000000000000000000000000000000000000000000000000000000000000",
+          "width": 2048,
+          "height": 1024,
+          "projection": "equirectangular",
+          "topology": "wrap"
+        }
+      },
+      "target": {
+        "image": {
+          "file_sha256": "3f9a000000000000000000000000000000000000000000000000000000000000",
+          "width": 2048,
+          "height": 1024,
+          "projection": "equirectangular",
+          "topology": "wrap"
+        },
+        "kind": "line",
+        "parts": [
+          {
+            "column": 0.5,
+            "width_px": 24
+          }
+        ],
+        "straddles_wrap": false,
+        "source": {
+          "tool": "rascal",
+          "version": "0.1.0",
+          "run": "r-9001"
+        }
+      },
+      "filler": "lama",
+      "max_spend_usd": 0.5
+    },
+    "effective": {
+      "model": "lama-local",
+      "config_identity": "sha256:c0f1000000000000000000000000000000000000000000000000000000000000",
+      "x-rascal": {
+        "filler": "lama",
+        "constants": "remove-v1"
+      }
+    },
+    "requirements": [
+      "rascal.toml",
+      "RASCAL_LAMA_DIR"
+    ]
+  },
+  "spend": {
+    "usd": 0,
+    "unresolved_usd": 0,
+    "basis": "measured"
+  },
+  "cache": "off",
+  "images": {
+    "in": [
+      {
+        "slot": "image",
+        "role": "source",
+        "image": {
+          "file_sha256": "3f9a000000000000000000000000000000000000000000000000000000000000",
+          "width": 2048,
+          "height": 1024,
+          "projection": "equirectangular",
+          "topology": "wrap"
+        }
+      }
+    ],
+    "out": [
+      {
+        "role": "result",
+        "image": {
+          "file_sha256": "8e11111111111111111111111111111111111111111111111111111111111111",
+          "width": 2048,
+          "height": 1024,
+          "projection": "equirectangular",
+          "topology": "wrap"
+        },
+        "path": "/abs/rascal-runs/r-9005/result.png"
+      },
+      {
+        "role": "mask",
+        "image": {
+          "file_sha256": "5d4b111111111111111111111111111111111111111111111111111111111111",
+          "width": 2048,
+          "height": 1024,
+          "projection": "equirectangular",
+          "topology": "wrap"
+        },
+        "path": "/abs/rascal-runs/r-9005/mask-grey.png"
+      },
+      {
+        "role": "preview",
+        "image": {
+          "file_sha256": "5d4a111111111111111111111111111111111111111111111111111111111111",
+          "width": 2048,
+          "height": 1024,
+          "projection": "equirectangular",
+          "topology": "wrap"
+        },
+        "path": "/abs/rascal-runs/r-9005/preview-mask.png"
+      }
+    ]
+  },
+  "locations": {
+    "used": [
+      {
+        "image": {
+          "file_sha256": "3f9a000000000000000000000000000000000000000000000000000000000000",
+          "width": 2048,
+          "height": 1024,
+          "projection": "equirectangular",
+          "topology": "wrap"
+        },
+        "kind": "line",
+        "parts": [
+          {
+            "column": 0.5,
+            "width_px": 24
+          }
+        ],
+        "straddles_wrap": false,
+        "source": {
+          "tool": "rascal",
+          "version": "0.1.0",
+          "run": "r-9001"
+        }
+      }
+    ],
+    "found": []
+  },
+  "artifacts": {
+    "in": [],
+    "out": [
+      {
+        "port": "mask",
+        "artifact": {
+          "type": "rascal:Mask",
+          "schema_version": 1,
+          "tool": "rascal",
+          "identity": "sha256:9c3a000000000000000000000000000000000000000000000000000000000000",
+          "frame": "sha256:41ab000000000000000000000000000000000000000000000000000000000000",
+          "on": {
+            "file_sha256": "3f9a000000000000000000000000000000000000000000000000000000000000",
+            "width": 2048,
+            "height": 1024,
+            "projection": "equirectangular",
+            "topology": "wrap"
+          },
+          "resource": "rascal://artifact/sha256:9c3a000000000000000000000000000000000000000000000000000000000000"
+        },
+        "preview": {
+          "role": "preview",
+          "image": {
+            "file_sha256": "5d4a111111111111111111111111111111111111111111111111111111111111",
+            "width": 2048,
+            "height": 1024,
+            "projection": "equirectangular",
+            "topology": "wrap"
+          },
+          "path": "/abs/rascal-runs/r-9005/preview-mask.png"
+        }
+      }
+    ]
+  },
+  "notes": [],
+  "body": {
+    "envelope": {
+      "op": "remove"
+    }
+  }
+}
