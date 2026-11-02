@@ -5,7 +5,38 @@ evidence; none is binding until it lands in CONTRACT.md and the schemas at a tag
 
 **v0.2 carried C4** (run association and budget sessions, below).
 
-**v0.3 (draft in CONTRACT.md, 2026-11-01)** adopts, decided by the coordinating session that owns
+**v0.4 (draft in CONTRACT.md, 2026-11-01)** adopts, decided by the coordinating session that owns
+this repository, all ten recommendations of its v0.4 design memo, as written:
+
+- From rascal's M10 and Wafflehouse's R3, the **operations profile**: an operation is an ordinary
+  action with `kind: "operation"` and typed `ports`, so every op call is a run (no second result
+  shape, no envelope dialect); top-level `artifact_types` (shared `image` and `location`, tool
+  types `<tool>:<Name>`, `portable: bundle | json | none`, `preview`); the artifact reference
+  (type, schema version, tool, identity, opaque frame, optional `on` image, resource); the
+  `binding` refusal before any run, one entry per port with `wrong_type`, `wrong_version`,
+  `wrong_frame` or `unresolved` (with a remedy), from calls and estimates alike; `artifacts
+  {in, out}` with previews in the result; the `<tool>://artifact/{identity}` resource, which is
+  how a host reopens a saved binding after a restart or a workspace move (rascal PLAN 10.1 to
+  10.6, R3 accept 1 to 5).
+- From Wafflehouse's C2: the reserved `export` and `import` tools over the tools' own bundles
+  (paths in; the tool chooses where it writes); `invocation` on every result and one generic
+  `<tool> call <action> --arguments <file>` command; the host-built, byte-stable invocation
+  bundle, in which an unexportable native is listed as workspace-dependent and never replaced by
+  a rendering (rascal ADR 0022's rules).
+- From squint's item 2: MCP roots are dropped in favour of `serve --allow-dir <abs>` (repeatable,
+  narrowed by configuration, none meaning every path refused, symlinks resolved before the
+  check, the directories shown in the session resource), and tools never write at a
+  caller-given path. This also closes rascal's gap, which enforced no roots.
+- From Wafflehouse's C1: grouping by the contract's `kind` (`task | operation | utility`) and the
+  tool's optional `group`, listed in `vocabulary.group`; a host never parses names.
+
+**Left for later than v0.4:** bundling rascal's Plan, Series and BandProfile (declared
+`portable: none` meanwhile); reconstruction recipes (a possible `portable: recipe`); an artifact
+listing resource (the host keeps its own references); report asset relocation beyond the
+self-contained document render (C3); the MCP revision move; network transports; durable ledgers
+across processes; prompt localisation (R2); operations in squint, which has no native types.
+
+**v0.3 (published 2026-11-01)** adopts, decided by the coordinating session that owns
 this repository: squint's items 1, 3, 4 and 5 below; Wafflehouse's C1 (readiness and its paid-path
 follow-up: configuration lifetime, estimate binding, the per-call cap, and estimates as controls);
 C3 (render readiness, framing and lifetime); and option (a) of "a claim released when the request

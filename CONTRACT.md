@@ -1,10 +1,12 @@
-# table-manners, v0.3.0
+# table-manners, v0.4.0 (draft)
 
-Status: **v0.3.0, ready to tag**, 2026-11-01. v0.2.0 plus readiness without configuration, bound
-estimates and checked caps, report renders a host can embed, list image slots, credential failures,
-and a claim released when a request gets no run ("Changes from v0.2" below). Both tools' fixtures
-validate (7): rascal M12, squint M9. The operations profile, portable artifacts (C2) and the
-replacement for MCP roots follow in v0.4.
+Status: **v0.4.0 draft, not binding until tagged**, 2026-11-01. v0.3.0 plus the operations
+profile (operations as ordinary actions with typed ports, artifact types and references, the
+`binding` refusal, artifacts in the result, the reserved `export` and `import` tools), the kind and
+group of every action, the effective invocation on every result with one generic command line and
+a portable invocation bundle, and allowed directories given at start in place of MCP roots
+("Changes from v0.3" below). The schemas, types and examples follow once this text is approved;
+until then `schemas/` is v0.3.0's.
 
 table-manners is the contract the waffle tools keep at a shared table: one external interface for
 squint (checks an image against what was asked), rascal (finds, masks and composites regions),
@@ -20,22 +22,32 @@ generate ──► squint check ──► rascal remove ──► filler paints 
 
 The contract has a **core** every tool follows (sections 1 to 7) and **profiles** a tool adds
 for the kind of thing it works on. v0.1 has one profile, **images** (sections 8 to 12), which
-squint and rascal both implement. A tool that works on text, audio or code follows the core and
-needs no profile until one is written for it, against a real tool.
+squint and rascal both implement. v0.4 adds **operations** (single steps a host runs alone on
+typed artifacts), which rascal implements; its sections sit in the core's numbering where they
+extend a core object (3.3, 3.4, 4.7, 5.1) and each is marked "(operations profile)". A tool that
+works on text, audio or code follows the core and needs no profile until one is written for it,
+against a real tool.
 
 The words MUST, MUST NOT, SHOULD and MAY are used as in RFC 2119.
 
 Sources: squint ADR 0018 and SPEC "External interface"; rascal's seed section in
-`../playground-recommendation.md`; rascal ADR 0005 (surfaces) and ADR 0015 (MCP transport).
+`../playground-recommendation.md`; rascal ADR 0005 (surfaces) and ADR 0015 (MCP transport). For
+v0.4: rascal PLAN M10 and ADR 0022 (portable masks); Wafflehouse's C1, C2 and R3.
 
 # Part 1: the core
 
 ## 1. Scope, versioning and profiles
 
-- The core defines the **result** (2), the **description document** (3), **long runs** (4)
-  with the **session** (4.6), the **MCP server conventions** (5), **exit codes** (6) and what a conforming tool provides (7). The
-  images profile defines the **image reference** (8), the **location** (9), how images enter and
-  leave a tool (10), and what it adds to the result and the description (11).
+- The core defines the **result** (2) with the **invocation** (4.8), the **description
+  document** (3), **long runs** (4) with the **session** (4.6), **invocation bundles** (4.9), the
+  **MCP server conventions** (5) with the **path rule** (5.2), **exit codes** (6) and what a
+  conforming tool provides (7). The images profile defines the **image reference** (8), the
+  **location** (9), how images enter and leave a tool (10), and what it adds to the result and the
+  description (11). The operations profile defines **artifact types** (3.3), the **artifact
+  reference** (3.4), **operations** with their ports, binding and outputs (4.7), and the reserved
+  **`export` and `import`** tools (5.1). It builds on the images profile: a tool that lists
+  `operations` also lists `images`, because ports name images and locations and previews are
+  image outs.
 - A **profile** is a named set of additions to the core's objects. A tool lists the profiles it
   implements in its description (`profiles`); it MUST include every field a listed profile
   requires and MUST NOT emit a profile's fields without listing it. A new profile is a contract
@@ -44,7 +56,8 @@ Sources: squint ADR 0018 and SPEC "External interface"; rascal's seed section in
   format or its internal frames. A tool MAY add fields in its own namespace (the result `body`,
   `x-<tool>` keys in the description); it MUST NOT add fields to the shared objects.
 - The JSON Schemas under `schemas/` are the source of truth; this text explains them.
-  `schemas/core/` holds the core's and `schemas/images/` the images profile's. Each schema's `$id`
+  `schemas/core/` holds the core's, `schemas/images/` the images profile's and
+  `schemas/operations/` the operations profile's. Each schema's `$id`
   is `urn:table-manners:<dir>:<name>` and references between them use those ids. The Rust crate
   `table-manners` holds serde types matching them and embeds them (`SCHEMAS`), with no logic.
   `examples/` holds valid and invalid documents for each schema; the crate's tests check both the
@@ -58,7 +71,12 @@ Sources: squint ADR 0018 and SPEC "External interface"; rascal's seed section in
   review found about long paid runs: a run a client can correlate, and a spend ledger it can
   observe. v0.3 lets a host set a tool up and pay for a run safely: readiness without
   configuration (3.1), estimates bound to their inputs and checked before paid work (4.5), and
-  report renders it can embed (3.2). The other proposals in `PROPOSALS.md` follow in later minors.
+  report renders it can embed (3.2). v0.4 lets a host run one step alone on a saved artifact and
+  move a call elsewhere: operations as ordinary runs on typed artifact references (4.7), the kind
+  and group of every action (3), the effective invocation on every result (4.8), portable
+  bundles a host builds from contract pieces (4.9), and allowed directories given at start, since
+  MCP roots are deprecated after `2025-11-25` (5.2). The other proposals in `PROPOSALS.md` follow
+  in later minors.
 
 ## 2. The result
 
@@ -69,7 +87,7 @@ while the tool may still be running. A **header** the contract owns and a **body
 
 ```jsonc
 {
-  "contract": "0.3.0",
+  "contract": "0.4.0",
   "tool": { "name": "squint", "version": "0.2.0" },
   "action": "check",
   "run": { "id": "decision-1793386884140-53022", "resource": "squint://run/decision-…/run.json",
@@ -81,11 +99,15 @@ while the tool may still be running. A **header** the contract owns and a **body
   "finished": "2026-10-30T19:10:21.904Z",
   "duration_ms": 39786,
   "input_identity": "sha256:…",
+  "invocation": { "action": "check", "arguments": { …resolved (4.8)… },
+                  "effective": { "model": "claude-sonnet-5-5", "config_identity": "sha256:…" },
+                  "requirements": [ "squint.toml", "ANTHROPIC_API_KEY" ] },
   "spend": { "usd": 0.0389, "unresolved_usd": 0, "basis": "measured" },
   "cache": "miss",
   "notes": [ "repair: the first submission omitted item C3; repaired in one turn" ],
   "body": { …the tool's own… }
   // the images profile adds "images" and "locations" (11.1)
+  // the operations profile adds "artifacts" (4.7)
 }
 ```
 
@@ -109,7 +131,7 @@ Present exactly when `status` is `error` or `invalid`, and null otherwise:
 | `code` | typical status | meaning |
 |---|---|---|
 | `usage` | invalid | an unknown action, a missing or malformed argument |
-| `input` | invalid | an input the tool cannot take; for the images profile a digest mismatch, a path outside roots or over a network, a size over the limit, a location on another image |
+| `input` | invalid | an input the tool cannot take; for the images profile a digest mismatch, a path outside the allowed directories (5.2) or over a network, a size over the limit, a location on another image |
 | `io` | error | reading or writing the tool's own files failed |
 | `stale_estimate` | invalid | the call named an estimate (4.5) that no longer matches it: other inputs, configuration, tool version or session, or past its `expires` |
 | `provider` | error | a remote model or service failed (a judge model, a filler endpoint) |
@@ -132,6 +154,10 @@ asks for a new estimate first.
   null. All five are required; the nullable ones are null, never absent.
 - `input_identity`: a digest the tool computes over its resolved inputs and parameters, so two
   results with equal identities ran the same thing. Its recipe is the tool's.
+- `invocation`: what the call resolved to, so it can be run again elsewhere (4.8). It is required
+  in every result; it is null only on an `invalid` run whose arguments did not resolve.
+  `input_identity` stays as the digest (its recipe is still the tool's); `invocation` is the
+  readable record beside it.
 - `spend.usd` is what this run cost by the accounting in 4.5, including a cancelled or failed
   run's spend to date; 0 for a cache hit. `spend.unresolved_usd` is the part of it no provider
   answer settled: an upper bound, so a client shows "at most", never zero or an exact figure.
@@ -152,13 +178,14 @@ asks for a new estimate first.
 
 ```jsonc
 {
-  "contract": "0.3.0",
+  "contract": "0.4.0",
   "profiles": ["images"],
   "tool": { "name": "squint", "version": "0.2.0", "purpose": "Checks an image against what was asked of it." },
   "actions": [
     {
       "name": "source_fidelity",
       "title": "Source fidelity",
+      "kind": "task",
       "purpose": "…",
       "params_schema": { …JSON Schema… },
       "cost": { "may_spend": true, "basis": "measured" },
@@ -168,17 +195,34 @@ asks for a new estimate first.
                      "command": ["squint", "report", "view", "{run.dir}", "--port", "0",
                                  "--frame-ancestor", "{frame_ancestor}"] } ]
       // the images profile adds "images", "locations" and "outputs" (11.2)
+      // the operations profile adds "ports" to an operation (4.7)
     }
   ],
   "progress_interval_s": 10,
   "resources": [ "squint://runs{?cursor}", "squint://run/{id}/run.json", "squint://run/{id}/journal",
                  "squint://session" ],
+  "vocabulary": { …(below)… },
   "x-squint": { }
-  // the images profile adds "vocabulary" and "limits" (11.2)
+  // the images profile adds "limits" (11.2)
+  // the operations profile adds "artifact_types" (3.3)
 }
 ```
 
 - `profiles` lists the profiles the tool implements; `[]` for a core-only tool.
+- `kind` is required on every action and is one of three words the contract owns:
+
+  | `kind` | the action is | a host shows it |
+  |---|---|---|
+  | `task` | a whole job a person or agent asks for (squint's checks, rascal's `remove`) | with the tasks |
+  | `operation` | one step on typed artifacts, run alone (4.7); only in a tool that lists `operations` | with the operations |
+  | `utility` | neither | apart from both |
+
+- `group` is optional: a word of the tool's own that sorts actions within a kind (rascal's `find`,
+  `refine`, `prep`, `out`, `inspect`). Every group an action names MUST appear in
+  `vocabulary.group`. A host groups by `kind`, then by `group`, and never by an action's name.
+- `vocabulary` is a top-level object of word lists. The core owns `group`: required, and listing
+  every `group` the actions use, whenever any action has one; absent or empty otherwise. The
+  images profile adds its lists (11.2). `vocabulary` is required whenever any list in it is.
 - `params_schema` is a JSON Schema for the action's arguments other than those a profile adds.
   Choices a caller may make (a model, a filler) are arguments in it, with the default the tool
   uses when they are absent; what the tool actually used is in the estimate (4.5) and the run.
@@ -186,8 +230,8 @@ asks for a new estimate first.
 - `readiness` says whether the action can run here, now, and what is missing (3.1).
 - `duration` lets a client set its timeout up front, and `progress_interval_s` (at most 10) is the
   longest gap between progress notifications on a live run (4.1).
-- Action names are lowercase with underscores (`check`, `seam_heal`); `describe` and `estimate`
-  are reserved (5) and never appear in `actions`.
+- Action names are lowercase with underscores (`check`, `seam_heal`); `describe`, `estimate`,
+  `export` and `import` are reserved (5) and never appear in `actions`.
 - `renders` show a run to a person (3.2).
 - `describe` works with no configuration, no credentials and no network (3.1), and is cheap: a
   host calls it again to refresh readiness.
@@ -270,6 +314,65 @@ serves, never another program and never another install found on `PATH`.
 - A render that exits non-zero, or prints no line in time, failed to start. Its stderr is for
   people. A failed render never changes the run's status.
 - Renders need a local run directory. A run whose `run.dir` is null has no render.
+
+### 3.3 Artifact types (operations profile)
+
+An **artifact** is a thing an operation takes or makes: an image, a location, or a record of the
+tool's own (a mask with its zones and prescriptions, a plan). Its **type** says which. The
+description lists every type the tool's ports name, once, at the top level, except `image`, which
+the contract defines whole: it travels as a file (10.1, 4.9), needs no export and is its own
+picture.
+
+```jsonc
+"artifact_types": [
+  { "type": "location", "schema_versions": [1], "purpose": "where something is (9)", "portable": "json", "preview": true },
+  { "type": "rascal:Mask", "schema_versions": [1], "purpose": "zones, profile, prescriptions",
+    "portable": "bundle", "preview": true },
+  { "type": "rascal:Plan", "schema_versions": [1], "purpose": "…", "portable": "none", "preview": false }
+]
+```
+
+- The shared types are `image` (an image reference, 8) and `location` (9). The contract defines
+  them, and they carry no prefix. Their schema version is 1.
+- Every other type is the tool's: `<tool.name>:<Name>` (`rascal:Mask`, `rascal:BandProfile`,
+  `rascal:Series`, `rascal:Plan`). It is opaque to the host and to other tools: a tool MUST NOT
+  accept another tool's type, and a host never reads inside one.
+- `schema_versions` lists the versions of the type's record the tool reads, as integers. A tool
+  writes the newest it lists.
+- `purpose` is a sentence for people.
+- `portable` says how the artifact leaves the workspace it lives in: `bundle` (a file the tool
+  writes and reads whole, 5.1), `json` (a JSON document, 5.1) or `none` (it cannot leave yet).
+  A host labels an artifact of a `none` type **workspace-dependent** and never replaces it with
+  something else, such as a rendering of it.
+- `preview` says whether the tool draws an artifact of the type as an image for people (4.7).
+
+### 3.4 The artifact reference (operations profile)
+
+How an operation names an artifact (`schemas/operations/artifact-ref.json`). A host stores
+references, never a tool's ids, and passes them back.
+
+```jsonc
+{ "type": "rascal:Mask", "schema_version": 1, "tool": "rascal",
+  "identity": "sha256:9c1e…",                  // REQUIRED: the tool's recipe; never a workspace id
+  "frame": "sha256:41ab…",                     // REQUIRED: opaque frame identity, null for frameless types
+  "on": { …image reference (8)… },             // OPTIONAL: the root image it was made on
+  "resource": "rascal://artifact/sha256:9c1e…" }
+```
+
+- `type` is one of the tool's `artifact_types`, and `schema_version` one of its versions.
+- `tool` is the tool that made the artifact (`tool.name`).
+- `identity` is a digest by the tool's recipe, written `sha256:<lowercase hex>` (rascal's
+  recipe: ADR 0016, references replaced by identities). Equal identities are the same artifact in any workspace, on any
+  machine. Workspace ids (`mask-3`, `crop:2`) never appear in a reference: ids are local, identity
+  is not. For an `image`, the identity is `sha256:` followed by its `file_sha256` (8.1), so any
+  tool computes the same one.
+- `frame` names the pixel grid the artifact is drawn in (the tool's own frame identity: an image's
+  size and projection, a crop chained to its parent). It is opaque: the tool alone compares frames.
+  It is null for a type with no frame.
+- `on` is the image reference of the root image the artifact was made on, when the tool knows it.
+  A host uses it, with `type`, to offer only candidates made on the same file; it never checks
+  frames itself.
+- `resource` reads the artifact (4.7).
 
 ## 4. Long runs
 
@@ -359,8 +462,8 @@ non-null id is used at most once:
   `-32602` with `data` per `schemas/core/refusal.json`, `{"reason": "client_run_id_reused",
   "run": <the earlier request's run reference>}`. `run` is null only while the earlier request
   is still waiting for the permit, or when it was cancelled before allocation.
-- A request that ends in a JSON-RPC error with no run (invalid params, a failed `roots/list`, any
-  refusal in 5) **releases** its id: the client fixes the request and retries under the same id.
+- A request that ends in a JSON-RPC error with no run (invalid params, any refusal in 5)
+  **releases** its id: the client fixes the request and retries under the same id.
 - A request cancelled before allocation keeps its id claimed for the session; a client that
   retries it uses a new id.
 - The refusal never stands for the new request's result. The client reconciles the earlier run
@@ -410,7 +513,7 @@ exactly the arguments the paid call would send:
 It answers with an estimate (`schemas/core/estimate.json`) as `structuredContent`:
 
 ```jsonc
-{ "contract": "0.3.0", "tool": { "name": "squint", "version": "0.2.0" },
+{ "contract": "0.4.0", "tool": { "name": "squint", "version": "0.2.0" },
   "action": "source_fidelity",
   "binding": "sha256:…",
   "session_id": "0b7e3c5a-…",
@@ -427,10 +530,11 @@ It answers with an estimate (`schemas/core/estimate.json`) as `structuredContent
   any other wrong request (`max_spend_usd` above the configured cap, an `expect` that does not
   match, an unknown action) is `-32602` with refusal data `{"reason": "invalid_arguments",
   "run": null, "error": {…the error object, 2.2: `usage` or `input`, not retryable…}}`. A call
-  that is not ready is not an error: its estimate is `refused: "readiness"`. It never waits for the permit (see
+  that is not ready is not an error: its estimate is `refused: "readiness"`. A call whose
+  artifacts do not bind gets the same `binding` refusal the call would (4.7). It never waits for the permit (see
   below). It is a control request, not history; a host never shows it as an attempt.
 - `binding` is a digest the tool computes over the action, the arguments after resolving every
-  image to its file digest (8.1), the tool version, the effective configuration
+  image to its file digest (8.1) and every artifact reference to its identity (3.4), the tool version, the effective configuration
   (`effective.config_identity`) and the session id. Arguments that only choose how results are
   delivered (the images profile's `return_images` and `image_blocks`, 10.2) are left out. Its recipe is the tool's; two estimates with
   equal bindings priced the same call.
@@ -470,13 +574,17 @@ A **session** is one serving process's spend ledger. `<tool>://session`
 (`schemas/core/session.json`) returns one atomic observation of it:
 
 ```jsonc
-{ "contract": "0.3.0", "tool": { "name": "rascal", "version": "0.1.0" },
+{ "contract": "0.4.0", "tool": { "name": "rascal", "version": "0.1.0" },
   "id": "0b7e3c5a-6f1d-4c2e-9a8b-3d4e5f6a7b8c", "started": "2026-10-31T18:02:11.530Z",
   "budget_usd": 2.0, "spent_usd": 0.16, "unresolved_usd": 0.04, "reserved_usd": 0.04,
-  "remaining_usd": 1.8 }
+  "remaining_usd": 1.8,
+  "allowed_dirs": [ "/abs/host/library", "/abs/host/execution" ] }
 ```
 
 - `id` is a random UUID (v4), lowercase, generated when `serve` starts.
+- `allowed_dirs` lists the directories the session reads caller paths from (5.2): absolute,
+  symlinks resolved, after the configuration narrowed them. It is required, and `[]` when every
+  path is refused. Like the configuration, it is fixed for the session.
 - **Configuration belongs to the session.** `serve` reads the tool's configuration once, at start;
   the host chooses it only by the tool's own `--config <path>` argument, or leaves the tool's
   default lookup. A host never reads or writes a tool's configuration, and passes the child only
@@ -496,19 +604,219 @@ A **session** is one serving process's spend ledger. `<tool>://session`
 - A session is not a daily budget or a provider account balance. When a server restarts, a client
   sees a new id; what an interrupted session left unresolved stays unresolved in its runs.
 
+### 4.7 Operations (operations profile)
+
+An **operation** is an action with `kind: "operation"`: one step a host runs alone on artifacts it
+already holds (a Line on an image, that Line's location to Rasterize, a saved Mask to Feather with
+a new sigma). It is an ordinary action: every call is a run with `run.json`, a run reference,
+readiness, an estimate, progress and cancellation, as in 2 to 4.6. Nothing upstream reruns: an
+operation works on the artifacts it is given or refuses.
+
+**Ports.** An operation declares typed inputs and outputs:
+
+```jsonc
+"ports": {
+  "in":  [ { "name": "location", "type": "location", "required": true, "many": false, "purpose": "…" },
+           { "name": "image", "type": "image", "required": true, "purpose": "the frame" } ],
+  "out": [ { "name": "mask", "type": "rascal:Mask", "required": true, "purpose": "…" } ]
+}
+// params_schema keeps the operation's own parameters, e.g. "sigma_px", "constants": {"enum": ["feather-v1"]}
+```
+
+- `ports` is required on every operation and absent on every other kind.
+- A port has `name` (lowercase with underscores, unique within `in` and within `out`), `type`
+  (`image`, `location` or one of `artifact_types`, 3.3), `required`, `many` (default false: the
+  port takes or makes a list) and `purpose`.
+- An operation's MCP input schema is its `params_schema` plus one property per in-port, named for
+  the port: an artifact reference (3.4), or a non-empty array of them when `many`. An `image` port
+  also takes an image in (10.1), and a `location` port a location (9). A port name never clashes
+  with a parameter.
+- For an operation, ports are the images profile's slots: its image and location inputs are
+  ports only, and its `images` and `locations` (11.2) are `[]`.
+
+**Binding.** Before it allocates a run, the tool binds each in-port: it resolves every reference
+by `identity` in its own store and checks the type, the schema version and the frame. A tool
+validates frames itself (crop and cut chains); a host only filters candidates by `type` and `on`.
+A call that does not bind is refused before any run, as a JSON-RPC error `-32602` with refusal
+data (`schemas/core/refusal.json`):
+
+```jsonc
+{ "reason": "binding", "run": null,
+  "bindings": [ { "port": "mask", "problem": "unresolved", "expected": "rascal:Mask v1",
+                  "got": "sha256:9c1e…", "remedy": "import its bundle with the import tool" } ] }
+```
+
+- `bindings` holds one entry per reference that failed, in port order and, within a `many` port,
+  in the order given. A call with several problems names them all.
+- `problem` is one of:
+
+  | `problem` | the reference |
+  |---|---|
+  | `wrong_type` | names a type the port does not take, or another tool's type |
+  | `wrong_version` | names a schema version the tool does not read |
+  | `wrong_frame` | is drawn in a frame the operation cannot use with its other inputs |
+  | `unresolved` | names an identity the tool's store does not hold |
+
+- `expected` says what the port takes and `got` what it was given, each a short phrase for
+  people (a type and version, or an identity). `remedy` is a sentence a person can act on; it is
+  required for `unresolved` and optional otherwise.
+- Like `not_ready` (3.1), the refusal writes no run, spends nothing and releases the
+  `client_run_id` (4.4). A host shows it on the form field the port names.
+- An image or location given inline, by path or as an object, is checked as in 8.1 and 9.1; a
+  mismatch there is an `invalid` run with code `input`, as for any action.
+
+**Outputs.** The profile adds `artifacts` to the result:
+
+```jsonc
+"artifacts": {
+  "in":  [ { "port": "mask", "artifact": { …reference… }, "preview": null } ],
+  "out": [ { "port": "mask", "artifact": { …reference… },
+             "preview": { "role": "preview", "image": { … }, "path": "/abs/run/preview-mask.png" } } ]
+}
+```
+
+- `artifacts` is required in every result of an operations tool, with empty lists where there is
+  nothing. It MAY be present on `error` and `cancelled` (2.3).
+- `artifacts.in` lists each artifact the run took through a port, and `artifacts.out` each it
+  made, as `{ port, artifact, preview }`. A `many` port appears once per artifact, in order.
+- `preview` is an image out (10.2) with role `preview`, drawing the artifact for people. It is
+  required on every out entry whose type declares `preview: true`, and null otherwise; on in
+  entries it MAY be given. A preview never stands for the artifact: a host passes the reference on.
+- An image an operation takes or makes also appears in `images.in` (with the port's name as
+  `slot`) or `images.out`, and every preview in `images.out`. A location it takes or makes also
+  appears in `locations.used` or `locations.found` (11.1), so consumers of the images profile keep
+  working.
+- The tool's own record of the step (rascal's native envelope) goes in `body`. A host never reads
+  it; what it needs is in the header and `artifacts`.
+
+**The artifact resource.** Every artifact a tool holds is readable by identity:
+
+```jsonc
+// <tool>://artifact/{identity}
+{ "contract": "0.4.0", "tool": { "name": "rascal", "version": "0.1.0" },
+  "artifact": { …reference… },
+  "preview": { …image out with role "preview"… },
+  "record": { …the tool's own… } }
+```
+
+- `<tool>://artifact/{identity}` returns the reference, its preview (null when the type has none)
+  and the tool's own record, which a host never reads. `<tool>://artifact/{identity}/preview`
+  returns the preview image itself, for a type with `preview: true`.
+- A read of an identity the store does not hold fails with refusal data `{"reason": "binding",
+  "run": null, "bindings": [{"port": null, "problem": "unresolved", …, "remedy": "…"}]}`.
+- This is how a host reopens a saved binding after it restarts: it stores references, not ids,
+  and reads them back. After the workspace moves, the host starts the tool on the new location
+  (by the tool's own argv, 4.6) and the same identities resolve there; a host never searches
+  folders for an artifact.
+
+### 4.8 The invocation
+
+Every result carries `invocation` (2.3): what the call resolved to, recorded by the tool, so the
+call can be repeated from another directory, by another client or on another machine.
+
+```jsonc
+"invocation": {
+  "action": "feather",
+  "arguments": { "mask": { …artifact reference… }, "sigma_px": 6, "constants": "feather-v1" },
+  "effective": { "model": null, "config_identity": "sha256:…" },
+  "requirements": [ ]
+}
+```
+
+- `action` is the action's name.
+- `arguments` are the call's arguments as the tool resolved them: defaults applied; each image as
+  `{ "expect": <image reference> }` with no locator (no `path`, no `inline`); each artifact as its
+  reference (3.4); each location as given; `max_spend_usd` kept. Arguments that only choose how
+  results are delivered (`return_images`, `image_blocks`, 10.2) are left out, as in the estimate's
+  binding (4.5). Nothing in it depends on where files were, so it moves with the inputs.
+- `effective` is the estimate's object (4.5): `model`, `config_identity` and any `x-<tool>`
+  fields (squint's rule-set and catalog versions, rascal's constant sets and filler).
+- `requirements` lists the `name` of each readiness requirement (3.1) the call used, never a
+  value.
+
+**The command line.** Every tool provides one generic command that runs any action from its MCP
+arguments:
+
+```
+<tool> call <action> --arguments <file.json> [--config <path>] [--allow-dir <abs>]…
+```
+
+- The file holds exactly the arguments an MCP call to the action would send. The command prints
+  the result (2) on stdout, writes a run like any command-line run, and exits as in 6.
+- Paths in the arguments follow the path rule (5.2), with the directories given by `--allow-dir`.
+- So the mapping is mechanical: an `invocation`'s `arguments`, with a locator added to each image,
+  are the file for `<tool> call <invocation.action>`.
+- `<tool> call --bundle <path>` replays an invocation bundle (4.9). It imports each artifact
+  member (5.1), points each image at its input member, and calls each step with its
+  `invocation.arguments` plus those locators. The bundle path follows the path rule.
+
+### 4.9 Invocation bundles
+
+A **portable bundle** carries a call, or a chain of calls, with everything it needs to run again
+with the original workspace gone. The host builds it from contract pieces; the contract defines
+its manifest (`schemas/core/invocation-bundle.json`); no tool builds one.
+
+```
+invocation.json   the manifest (below)
+inputs/<file_sha256>.<ext>        each caller image, byte for byte
+artifacts/<identity>.<ext>        each tool export file (5.1), byte for byte
+```
+
+In member names an identity's `:` is written `-` (`artifacts/sha256-9c1e….mask.tar`).
+
+```jsonc
+{ "bundle_version": 1,
+  "steps": [
+    { "contract": "0.4.0", "tool": { "name": "rascal", "version": "0.1.0" },
+      "invocation": { …4.8… }, "result": { …the original run.json… },
+      "inputs":    [ { "port": "image", "image": { …image reference… }, "member": "inputs/3f9a….png" } ],
+      "artifacts": [ { "port": "mask", "artifact": { …reference… },
+                       "member": "artifacts/sha256-9c1e….mask.tar", "sha256": "…" } ],
+      "reference_only": [ { "slot": "references", "why": "the person left it out" } ],
+      "unportable": [ { "port": "plan", "artifact": { …reference… }, "reason": "rascal:Plan has portable: none" } ] } ] }
+```
+
+- The container is an uncompressed ustar with fixed headers (fixed mode, owner and time, members
+  in a fixed order), so equal contents give equal bytes and the archive's SHA-256 names it, as
+  rascal's mask bundle (ADR 0022) does.
+- `steps` lists the calls in order; a single call is one step. A later step names an earlier
+  step's output by its reference, never by a path.
+- `inputs` lists each image a step took, by `slot` (images profile) or `port` (operations), with
+  its reference and its member. Members are the caller's files byte for byte, so their
+  `file_sha256` still holds; a replay checks it.
+- `artifacts` lists each native input with its export file (5.1) stored byte for byte and that
+  file's `sha256`. A replay imports it, which checks it whole.
+- Inputs are included by default. `reference_only` lists each input left out on purpose, by
+  `slot` or `port`, with a sentence saying why; a replay needs it supplied.
+- `unportable` lists each native input whose type is `portable: none` or whose export failed,
+  with the reason. Such a bundle is labelled workspace-dependent. A native artifact is never
+  replaced by a rendering (a PNG of a mask is not a mask).
+- Replay, by a host or by `<tool> call --bundle` (4.8): import each artifact, put each input
+  under an allowed directory (5.2), and call each step with its `invocation.arguments` plus
+  locators. A live judgment (a model's verdict) is not promised to repeat; only the call is.
+- Reconstruction (rerunning an artifact's provenance instead of carrying it) is not a bundle
+  feature: it would rerun upstream steps, which an operation never does.
+- A host's evidence archive (results and pictures to read, not to run) is a separate thing and is
+  never called an invocation bundle.
+
 ## 5. MCP server conventions
 
 Lifted from `rascal serve` (rascal ADR 0015).
 
 - `<tool> serve` speaks MCP over stdio at protocol revision **`2025-11-25`** only, and refuses a
   client that cannot meet it at `initialize`. Moving revision is a contract change.
-- Capabilities: `tools` (with pagination), `resources` (run resources), progress, cancellation.
+- Capabilities: `tools` (with pagination), `resources` (run resources, the session, and the
+  artifact resources of an operations tool), progress, cancellation. A tool does not use MCP
+  roots: it never sends `roots/list` and never reads paths from the client's roots (5.2).
 - One MCP tool per action in the description, plus `describe`, plus `estimate` when any action
-  may spend (4.5); each action tool's input schema is its action's `params_schema` with the
-  arguments its profiles add. `estimate`'s input is `{action, arguments}` (4.5).
+  may spend (4.5), plus `export` and `import` when any artifact type is portable (5.1); each
+  action tool's input schema is its action's `params_schema` with the arguments its profiles add
+  (for an operation, its in-ports, 4.7). `estimate`'s input is `{action, arguments}` (4.5).
 - `<tool> serve` accepts `--config <path>` (4.6) and, like `describe`, starts without a
   configuration: its actions then report `needs_setup`, and a call that needs what is missing is
   refused `not_ready` (3.1).
+- `<tool> serve` accepts `--allow-dir <abs>`, repeatable, naming the directories it may read
+  caller paths from (5.2). The host passes them in its argv like `--config`.
 - A server MUST NOT require an injected context object: a client needs nothing but the
   description.
 - Once a run exists, every outcome is an MCP tool result carrying the header and body as
@@ -517,7 +825,7 @@ Lifted from `rascal serve` (rascal ADR 0015).
   only in a result, and a JSON-RPC error reaches a model client as an opaque failure.
 - JSON-RPC errors are reserved for failures before a run exists: an unknown tool, arguments the MCP
   layer rejects against the input schema, a reused `client_run_id` (4.4), a call that is not ready
-  (3.1), the server itself failing. A refusal the contract names carries `data.reason` (`schemas/core/refusal.json`) so a
+  (3.1), an operation whose artifacts do not bind (4.7), the server itself failing. A refusal the contract names carries `data.reason` (`schemas/core/refusal.json`) so a
   host can tell it from other invalid params. Such an error releases the request's
   `client_run_id` (4.4).
 - The contract's request and notification metadata lives in MCP's `_meta` under keys prefixed
@@ -527,6 +835,67 @@ Lifted from `rascal serve` (rascal ADR 0015).
   A tool in another language uses its official SDK at the same revision.
 - Every tool's test suite drives its server with an independently written client that shares no
   code with the server or the SDK. rascal's (`rascal_testkit::mcp_client`) is the reference.
+
+### 5.1 Export and import (operations profile)
+
+A tool that declares any artifact type `portable: bundle` or `portable: json` (3.3) serves the
+reserved MCP tools `export` and `import`, and the commands `<tool> export --json` and
+`<tool> import --json`, which take the same input and print the same output. Like `estimate`
+they are controls, not runs: they write no run, never appear in `actions` and are never shown as
+history. Their failures are JSON-RPC errors.
+
+```jsonc
+// export: in, then out
+{ "artifact": { …reference… } }
+{ "contract": "0.4.0", "tool": { "name": "rascal", "version": "0.1.0" },
+  "artifact": { …reference… },
+  "file": { "path": "/abs/rascal-data/exports/sha256-9c1e….mask.tar", "sha256": "…",
+            "bytes": 1832448, "media_type": "application/x-tar" } }
+
+// import: in, then out
+{ "file": { "path": "/abs/allowed/….mask.tar" }, "sha256": "…" }
+{ "inline": { "media_type": "application/json", "data": "<base64>" } }
+{ "contract": "0.4.0", "tool": { "name": "rascal", "version": "0.1.0" },
+  "artifact": { …reference… }, "already_present": false }
+```
+
+- **Export** writes the artifact's portable form into the tool's own data directory, outside any
+  run directory, at a path the tool chooses, and returns its absolute path, SHA-256, size and
+  media type. A `bundle` type exports the tool's bundle file (rascal's canonical ustar, ADR 0022);
+  a `json` type exports a JSON document (`application/json`). Exporting the same artifact again
+  gives the same bytes.
+- **Import** reads a file by `path`, under the path rule (5.2), or bytes given `inline`, up to
+  `limits.inline_bytes` (11.2). `sha256`, when given, is checked against the bytes. The tool
+  checks the whole file before it records anything, records the artifact in its store and
+  returns its reference. Import is idempotent by identity: importing an artifact already held
+  records nothing new and answers `already_present: true`.
+- A reference the store does not hold is refused for export with the `binding` refusal (4.7),
+  `port: "artifact"`, problem `unresolved`. Any other wrong request (a type that is
+  `portable: none`, a file that is not the type's portable form, such as a PNG given for a mask, a
+  digest mismatch, a path outside the allowed directories) is `-32602` with refusal data
+  `{"reason": "invalid_arguments", "run": null, "error": {…code `usage` or `input`, not
+  retryable…}}`, as for `estimate` (4.5).
+- A rendering of an artifact is never accepted as the artifact, and never exported in its place.
+
+### 5.2 The path rule
+
+A caller path is accepted only on a local transport (stdio), and only when its canonical form
+(absolute, with `.`, `..` and every symlink resolved) lies inside a directory the session allows.
+
+- The allowed directories are those given by `serve --allow-dir <abs>` (repeatable), resolved the
+  same way at start, then narrowed by the tool's own configuration, which may only take away. With
+  none, every path is refused. `<tool>://session` lists them as `allowed_dirs` (4.6), and they do
+  not change during the session.
+- `<tool> call` (4.8) and `<tool> import` (5.1) take the same flag under the same rule.
+- The rule covers every path a caller gives: images in (10.1), import files (5.1), bundles (4.8).
+- A refused path is an `invalid` result with code `input` in a run, or `-32602` with the
+  `invalid_arguments` refusal in a control. The refusal says nothing about the file, not even
+  whether it exists.
+- A tool writes only inside its own directories (its runs root, its workspace or store, its
+  export area) and never at a path a caller gives. What it writes for a caller (images out,
+  document renders, exports) is at a path it chooses and returns.
+- Over any network transport every path is refused (10.1).
+- MCP roots are not used. A host that offered roots passes `--allow-dir` instead.
 
 ## 6. Exit codes
 
@@ -544,17 +913,23 @@ Lifted from `rascal serve` (rascal ADR 0015).
 A conforming tool provides, at the contract version it names:
 
 1. `describe --json` and the `describe` MCP tool (3), validated against the schema in its tests,
-   working with no configuration (3.1); renders as in 3.2.
+   working with no configuration (3.1), with `kind` on every action; renders as in 3.2.
 2. `serve` (5) with an action per description entry, progress with the run reference (4.1),
    cancellation (4.2), run resources and the paged runs list (4.3), correlation ids (4.4), spend
-   limits with reservation and the three-way accounting where it spends (4.5), and the session
-   resource (4.6).
+   limits with reservation and the three-way accounting where it spends (4.5), the session
+   resource with `allowed_dirs` (4.6), and the path rule with `--allow-dir` and no MCP roots
+   (5.2).
 3. `run.json` (2), written atomically, in every run directory, on every surface, including
-   cancelled and failed runs.
+   cancelled and failed runs, with `invocation` (4.8); and `<tool> call` (4.8), including
+   `--bundle` replay of an invocation bundle (4.9).
 4. The exit codes (6).
 5. A `playground` subcommand that finds, offers to install and starts the shared playground; it
    carries no UI.
-6. Every profile it lists, conforming (12 for images).
+6. Every profile it lists, conforming (12 for images). For operations: every operation with
+   `ports` and a call that is a run (4.7); `artifact_types` (3.3) and artifact references with
+   identities, never ids (3.4); the `binding` refusal in calls and in `estimate` (4.7);
+   `artifacts` in every result, with a preview on each out entry whose type has one (4.7); the
+   artifact resource and its preview (4.7); `export` and `import` when any type is portable (5.1).
 7. The conformance fixtures in `fixtures/<tool>/` passing in its CI against its pinned release:
    `describe.json`, `run-*.json` results, `runs*.json` pages, `session.json` and `refusal-*.json`
    reuse refusals. A release is tagged only when every tool's fixtures validate against it. For
@@ -566,7 +941,51 @@ A conforming tool provides, at the contract version it names:
    failed with `stale_estimate` (changed image, argument, configuration, session; expired), `cap`,
    `budget` and `credential`; a request refused with no run whose id is then accepted, and one
    cancelled before allocation whose id is still refused; and proof in the tool's own tests that
-   `describe` and `estimate` made no provider call.
+   `describe` and `estimate` made no provider call. For v0.4 they add:
+   - `describe.json` with `kind` on every action and, for an operations tool, `group` with
+     `vocabulary.group`, `ports` on every operation and `artifact_types` (portable `bundle`,
+     `json` and `none`; with and without previews).
+   - Operation results `run-op-*.json` for a chain run one step at a time (rascal: Line, then
+     Rasterize on its location, then Feather on the saved Mask with a new sigma), each with
+     `artifacts.in` and `artifacts.out`, a preview on every out entry whose type has one, and the
+     same images and locations in `images` and `locations`.
+   - `refusal-binding-*.json`, one per problem (`wrong_type`, `wrong_version`, `wrong_frame`,
+     `unresolved` with its `remedy`), from a call and from `estimate`, and a request so refused
+     whose `client_run_id` is then accepted.
+   - `artifact-*.json`, an artifact resource read, and the refusal for an identity not held.
+   - `export-*.json` and `import-*.json`: a Mask exported and imported into an empty store
+     (`already_present: false`), imported again (`true`), a Location imported inline, and
+     refusals for a PNG given as a mask, a `portable: none` type and an unresolved export.
+   - `invocation` on every result, tasks included, and a `<tool> call --arguments` run of a
+     result's invocation whose `invocation` matches the original.
+   - An invocation bundle (`bundle-*/invocation.json`) replayed by `<tool> call --bundle` from
+     another directory with the original workspace gone; squint's replays offline on its
+     scripted provider.
+   - `session.json` with `allowed_dirs`, and `invalid`/`input` results for a path outside them,
+     a `..` escape, a symlink escape, a missing file (the same refusal as an existing one) and a
+     session started with no `--allow-dir` (`allowed_dirs: []`, every path refused).
+
+## Changes from v0.3
+
+Breaking, as a minor before 1.0 may be (1):
+
+- Every action carries `kind` (`task`, `operation` or `utility`) (3).
+- Every result carries `invocation` (2.3, 4.8).
+- MCP roots are gone: a tool never sends `roots/list`, and reads caller paths only inside the
+  directories given by `serve --allow-dir`, narrowed by its configuration; with none, every path
+  is refused. Paths are compared after resolving symlinks (5.2, 10.1).
+- `<tool>://session` adds `allowed_dirs` (required) (4.6).
+- A failed `roots/list` is no longer a case of a refusal releasing its id (4.4).
+- `export` and `import` are reserved names, beside `describe` and `estimate` (3, 5).
+- `vocabulary` is a core object; the images profile's four lists live in it as before, and the
+  core adds `group` (3, 11.2).
+
+Added: the operations profile: artifact types (3.3), the artifact reference (3.4), operations
+with ports, the `binding` refusal, `artifacts` with previews in the result and the artifact
+resource (4.7), and `export` and `import` (5.1); an action's optional `group` (3); the
+`<tool> call` command and `--bundle` replay (4.8); the invocation bundle
+(`schemas/core/invocation-bundle.json`, 4.9). Estimate bindings digest artifact references by
+identity (4.5).
 
 ## Changes from v0.2
 
@@ -711,8 +1130,8 @@ copy or any other frame internal to a tool.
   blend zone; for "change was allowed here" it sets `threshold: 1`, anything the composite may
   touch.
 - A `mask` crosses as its rendering. A tool's own mask record (rascal's zones, prescriptions and
-  provenance) MAY be offered as an MCP resource for tools that understand it; receivers that do
-  not need only the rendering.
+  provenance) is an artifact of the tool's type, read at its artifact resource and moved by
+  `export` and `import` (4.7, 5.1); receivers that do not understand it need only the rendering.
 - `disposition`, `confidence` and `evidence` are the producing tool's vocabulary, carried so an
   agent can show or filter them. The tool MUST list each word it can emit in its description
   (`vocabulary`, 11.2), so the playground can render them. A receiver MUST NOT assume another tool's
@@ -736,10 +1155,12 @@ Any named image slot of any action accepts one of the following, or, when the sl
 ```
 
 - `expect` is OPTIONAL. When present the tool verifies it (8.1).
-- **Paths** are absolute, and are accepted only on local transports (stdio), only inside the
-  client's MCP roots and any narrower roots in the tool's config. Over any network transport a
-  path MUST be refused (`invalid`, code `input`); a path in a remote call is a request to read the
-  host's filesystem.
+- **Paths** are absolute, and are accepted only on local transports (stdio), only when their
+  canonical form (symlinks resolved) lies inside the session's allowed directories: those given
+  by `serve --allow-dir`, narrowed by the tool's config, and none when neither names any (5.2).
+  Tools do not use MCP roots. A refused path is `invalid`, code `input`, and the refusal says
+  nothing about the file. Over any network transport a path MUST be refused (`invalid`, code
+  `input`); a path in a remote call is a request to read the host's filesystem.
 - **Inline** bytes are bounded; each tool states its limit in its description
   (`limits.inline_bytes`, 11.2).
 - A tool with state (rascal's workspace) treats a path or inline image as an implicit import: it
@@ -783,6 +1204,8 @@ Every image a tool returns is an **image out**: its reference, its role, and one
   Roles come from the tool's description (`candidate`, `source`, `result`, `mask`, …).
 - `locations.used` are those the run took in; `locations.found` those it produced.
 - Images and locations MAY be present on `error` and `cancelled` (2.3).
+- An operation's image and location ports and its previews appear here too (4.7); an image taken
+  through a port is listed with the port's name as `slot`.
 
 ### 11.2 The description
 
@@ -792,16 +1215,18 @@ Every image a tool returns is an **image out**: its reference, its role, and one
               { "slot": "references", "role": "reference", "required": false, "many": true } ],
   "locations": [ { "slot": "allowed", "kinds": ["mask", "bbox", "polygon"], "required": false } ],
   "outputs": { "images": [], "locations": ["found"] },
-  // at the top level
+  // at the top level, in the core's vocabulary (3)
   "vocabulary": { "disposition": ["violation", "allowed", "unsure"],
                   "confidence": ["confident", "tentative"], "evidence": ["source", "prompt"],
                   "score_kind": [] },
   "limits": { "inline_bytes": 33554432 }
 ```
 
-- All five are REQUIRED in the description of an images tool, and absent otherwise.
-- An action's `images` lists its image slots with the role each plays; `many` (default false)
-  says the slot takes a list; `locations` lists its
+- `images`, `locations`, `outputs` and `limits` are REQUIRED in the description of an images
+  tool, and absent otherwise; so are the four lists in `vocabulary`, which is the core's object
+  (3).
+- An action's `images` lists its image slots with the role each plays (`[]` for an operation,
+  whose inputs are ports, 4.7); `many` (default false) says the slot takes a list; `locations` lists its
   location slots with the kinds each accepts; `outputs` names the roles of the images it returns
   and whether it fills `locations.found`.
 - `vocabulary` lists every word the tool emits in a location's `disposition`, `confidence`,
