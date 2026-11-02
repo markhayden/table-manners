@@ -6,7 +6,7 @@
 //! artifact resource, every `export-*.json` and `import-*.json` an export or import response, and
 //! each of these three a refusal's data instead when it carries `reason`; every `bundle-*/`
 //! directory an invocation bundle whose `invocation.json` is a manifest and whose every listed
-//! member exists beside it with the digest the manifest states. Every dollar amount has at most
+//! member exists beside it with the digest the manifest states, and nothing else (4.9). Every dollar amount has at most
 //! six decimals (4.6). Any other file fails.
 //!
 //! Beside the schemas, the rules they cannot say: in a description, port names are unique within
@@ -19,6 +19,7 @@
 //! reference's own type carries the name of the tool that made it (3.3). The tool generates them from its own code and keeps
 //! its copy current in its own CI; here they are held to the contract.
 
+use std::collections::BTreeSet;
 use std::path::{Path, PathBuf};
 
 use sha2::{Digest, Sha256};
@@ -276,8 +277,9 @@ fn result_rules(path: &Path, r: &RunResult, description: Option<&Description>) {
     }
 }
 
-/// A `bundle-*/` directory: `invocation.json` is a manifest, and every member it lists exists
-/// beside it with the digest it states (an input's `file_sha256`, an artifact's `sha256`).
+/// A `bundle-*/` directory: `invocation.json` is a manifest, every member it lists exists beside
+/// it with the digest it states (an input's `file_sha256`, an artifact's `sha256`), and the
+/// directory holds nothing else (4.9).
 fn bundle(validator: &jsonschema::Validator, dir: &Path, tool: &str, d: Option<&Description>) {
     let manifest = dir.join("invocation.json");
     assert!(manifest.exists(), "{}: no invocation.json", dir.display());
@@ -286,6 +288,7 @@ fn bundle(validator: &jsonschema::Validator, dir: &Path, tool: &str, d: Option<&
     at_this_version(&manifest, &doc);
     valid(validator, &manifest, &doc);
     let b: InvocationBundle = serde_json::from_value(doc).expect("an InvocationBundle");
+    let mut listed = BTreeSet::new();
     for step in &b.steps {
         assert_eq!(
             step.invocation.action,
@@ -301,6 +304,7 @@ fn bundle(validator: &jsonschema::Validator, dir: &Path, tool: &str, d: Option<&
             .map(|i| (&i.member, &i.image.file_sha256))
             .chain(step.artifacts.iter().map(|a| (&a.member, &a.sha256)));
         for (member, digest) in members {
+            listed.insert(member.clone());
             let path = dir.join(member);
             assert!(path.is_file(), "{}: member {member} missing", dir.display());
             assert_eq!(
@@ -309,6 +313,32 @@ fn bundle(validator: &jsonschema::Validator, dir: &Path, tool: &str, d: Option<&
                 "{}: member {member} is not the bytes the manifest names",
                 dir.display()
             );
+        }
+    }
+    let mut present = BTreeSet::new();
+    files_under(dir, dir, &mut present);
+    present.remove("invocation.json");
+    assert_eq!(
+        present,
+        listed,
+        "{}: the members are exactly the ones the manifest lists",
+        dir.display()
+    );
+}
+
+/// Every file under `dir`, as a `/`-separated path relative to `root`.
+fn files_under(root: &Path, dir: &Path, out: &mut BTreeSet<String>) {
+    for entry in std::fs::read_dir(dir).unwrap_or_else(|e| panic!("{}: {e}", dir.display())) {
+        let path = entry.expect("entry").path();
+        if path.is_dir() {
+            files_under(root, &path, out);
+        } else {
+            let rel = path.strip_prefix(root).expect("under root");
+            let parts: Vec<String> = rel
+                .components()
+                .map(|c| c.as_os_str().to_string_lossy().into_owned())
+                .collect();
+            out.insert(parts.join("/"));
         }
     }
 }

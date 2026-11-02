@@ -18,23 +18,23 @@ branch by path until v0.4.0 is published, then pin `=0.4.0`.
 
 | contract | squint | rascal |
 |---|---|---|
-| every action carries `kind` (`task`, `operation`, `utility`); optional `group`, listed in the core's `vocabulary.group` (3) | done (M10) | to do |
-| `vocabulary` is a core object; the images profile's four lists live in it as before (3, 11.2) | done (M10) | to do |
-| `export` and `import` are reserved action names, beside `describe` and `estimate` (3, 5) | done (M10) | to do |
-| `profiles` lists `operations` (with `images`); top-level `artifact_types` with `schema_versions`, `portable` and `preview` (1, 3.3) | n/a (no operations profile in v0.4) | to do |
-| artifact references: type, schema version, tool, identity (never a workspace id), opaque frame, optional `on`, resource; accepted wherever an artifact is taken (3.4, 10.1) | n/a (no operations profile in v0.4) | to do |
-| operations: `kind: "operation"` with `ports` (`in`, `out`), in-ports in the MCP input schema, `images`/`locations` `[]`; every call a run (4.7) | n/a (no operations profile in v0.4) | to do |
-| the `binding` refusal before any run, from calls and `estimate`: per-reference `port`, `index` for `many` items, `problem`, `expected`, `got`, `remedy` for `unresolved`; releases the `client_run_id` (4.5, 4.7) | n/a (no operations profile in v0.4) | to do |
-| estimate bindings digest artifact references by identity (4.5) | n/a (no operations profile in v0.4) | to do |
-| `artifacts {in, out}` in every result, tasks' native outputs included, a `preview` on each out entry whose type has one; images and locations also in `images`/`locations` (4.7, 11.1) | n/a (no operations profile in v0.4) | to do |
-| `<tool>://artifact/{identity}` and `/preview`; a missed read is the `binding` refusal with `port: null` (4.7) | n/a (no operations profile in v0.4) | to do |
-| `export` and `import` tools and `<tool> export --json`/`import --json`: controls, never runs; refusals `binding` or `invalid_arguments`; import idempotent by identity (5.1) | n/a (no operations profile in v0.4) | to do |
-| `invocation` on every result (null only on an unresolved `invalid` run): resolved arguments without locators, `effective`, requirement names (file names only, never paths) (2.3, 4.8) | done (M10) | to do |
-| `<tool> call <action> --arguments <file> [--config] [--allow-dir]…` and `--bundle` replay (4.8, 4.9) | done (M10) | to do |
-| invocation bundle manifest and byte-stable ustar layout (host-built; tools replay it) (4.9) | done (M10) | to do |
-| MCP roots gone: `serve`/`call`/`import --allow-dir <abs>`, narrowed by configuration, none means every path refused, symlinks resolved; never write at a caller path (5, 5.2, 10.1) | done (M10) | to do |
-| `<tool>://session` adds `allowed_dirs` (4.6) | done (M10) | to do |
-| v0.4 fixtures (7, item 7) | done (M10) | to do |
+| every action carries `kind` (`task`, `operation`, `utility`); optional `group`, listed in the core's `vocabulary.group` (3) | done (M10) | done (M10): `describe.json` (7 tasks, 25 operations in groups `find`, `refine`, `prep`, `out`, `inspect`) |
+| `vocabulary` is a core object; the images profile's four lists live in it as before (3, 11.2) | done (M10) | done (M10): `describe*.json` |
+| `export` and `import` are reserved action names, beside `describe` and `estimate` (3, 5) | done (M10) | done (M10): `describe.json` (no action takes either name) |
+| `profiles` lists `operations` (with `images`); top-level `artifact_types` with `schema_versions`, `portable` and `preview` (1, 3.3) | n/a (no operations profile in v0.4) | done (M10): `describe.json` (`location`, `rascal:Mask` portable with previews; `rascal:BandProfile`, `rascal:Series`, `rascal:Plan` `portable: none`) |
+| artifact references: type, schema version, tool, identity (never a workspace id), opaque frame, optional `on`, resource; accepted wherever an artifact is taken (3.4, 10.1) | n/a (no operations profile in v0.4) | done (M10): `run-op-*.json`, `run-remove-mask.json`, `artifact-*.json`, `bundle-line-rasterize-feather/` |
+| operations: `kind: "operation"` with `ports` (`in`, `out`), in-ports in the MCP input schema, `images`/`locations` `[]`; every call a run (4.7) | n/a (no operations profile in v0.4) | done (M10): `describe.json`, `run-op-line.json`, `run-op-rasterize.json`, `run-op-feather.json`, `run-op-feather-from-remove.json` |
+| the `binding` refusal before any run, from calls and `estimate`: per-reference `port`, `index` for `many` items, `problem`, `expected`, `got`, `remedy` for `unresolved`; releases the `client_run_id` (4.5, 4.7) | n/a (no operations profile in v0.4) | done (M10): `refusal-binding-*.json` (`refusal-binding-many-index.json` for `index`), `run-binding-claim-released.json` |
+| estimate bindings digest artifact references by identity (4.5) | n/a (no operations profile in v0.4) | done (M10): `refusal-binding-estimate-*.json` (no allowed estimate over an artifact reference among the fixtures) |
+| `artifacts {in, out}` in every result, tasks' native outputs included, a `preview` on each out entry whose type has one; images and locations also in `images`/`locations` (4.7, 11.1) | n/a (no operations profile in v0.4) | done (M10): every `run-*.json` (`run-completed.json`, `run-remove-mask.json` for tasks' native outputs) |
+| `<tool>://artifact/{identity}` and `/preview`; a missed read is the `binding` refusal with `port: null` (4.7) | n/a (no operations profile in v0.4) | done (M10): `artifact-location.json`, `artifact-mask.json`, `artifact-plan.json`, `refusal-artifact-unresolved.json` |
+| `export` and `import` tools and `<tool> export --json`/`import --json`: controls, never runs; refusals `binding` or `invalid_arguments`; import idempotent by identity (5.1) | n/a (no operations profile in v0.4) | done (M10): `export-mask.json`, `import-mask.json`, `import-mask-again.json`, `import-location-inline.json`, `refusal-export-*.json`, `refusal-import-png.json` |
+| `invocation` on every result (null only on an unresolved `invalid` run): resolved arguments without locators, `effective`, requirement names (file names only, never paths) (2.3, 4.8) | done (M10) | done (M10): every `run-*.json` (null on `run-invalid.json` and `run-path-*.json`) |
+| `<tool> call <action> --arguments <file> [--config] [--allow-dir]…` and `--bundle` replay (4.8, 4.9) | done (M10) | done (M10): `run-call-feather.json`, `run-replay-*.json` |
+| invocation bundle manifest and byte-stable ustar layout (host-built; tools replay it) (4.9) | done (M10) | done (M10): `bundle-line-rasterize-feather/` (replayed as `run-replay-*.json`) |
+| MCP roots gone: `serve`/`call`/`import --allow-dir <abs>`, narrowed by configuration, none means every path refused, symlinks resolved; never write at a caller path (5, 5.2, 10.1) | done (M10) | done (M10): `run-path-*.json`, `session-no-allow-dir.json` |
+| `<tool>://session` adds `allowed_dirs` (4.6) | done (M10) | done (M10): `session.json`, `session-no-allow-dir.json` |
+| v0.4 fixtures (7, item 7) | done (M10) | done (M10): `fixtures/rascal/` from rascal 508b28a |
 
 ## v0.3 (readiness, bound estimates, renders)
 
