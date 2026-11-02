@@ -564,8 +564,9 @@ never a reservation, and `allowed: true` does not promise the limits check will 
 
 - Calls are serial by default; a tool MAY allow more with a concurrency setting. Execution
   concurrency does not depend on whether an action costs money. While a run holds the execution
-  permit, `describe`, `estimate`, every resource read (runs, a run, its journal, the session) and
-  cancellation MUST stay responsive: none of them waits for the permit.
+  permit, `describe`, `estimate`, `export`, `import`, every resource read (runs, a run, its
+  journal, the session, an artifact) and cancellation MUST stay responsive: none of them waits
+  for the permit.
 - A per-period budget (a day, a month) is later work: it needs a durable ledger across processes.
 
 ### 4.6 The session
@@ -648,6 +649,8 @@ data (`schemas/core/refusal.json`):
 
 - `bindings` holds one entry per reference that failed, in port order and, within a `many` port,
   in the order given. A call with several problems names them all.
+- `index` is the item's 0-based position within a `many` port, present only for items of a
+  `many` port: `{"port": "masks", "index": 2, "problem": "wrong_frame", …}`.
 - `problem` is one of:
 
   | `problem` | the reference |
@@ -679,6 +682,9 @@ data (`schemas/core/refusal.json`):
   nothing. It MAY be present on `error` and `cancelled` (2.3).
 - `artifacts.in` lists each artifact the run took through a port, and `artifacts.out` each it
   made, as `{ port, artifact, preview }`. A `many` port appears once per artifact, in order.
+- Every action of an operations tool fills `artifacts`, tasks included: a task lists each native
+  artifact it produced in `artifacts.out` (with `port` naming the output, such as `mask`), so a
+  mask a task made can be bound to an operation later.
 - `preview` is an image out (10.2) with role `preview`, drawing the artifact for people. It is
   required on every out entry whose type declares `preview: true`, and null otherwise; on in
   entries it MAY be given. A preview never stands for the artifact: a host passes the reference on.
@@ -776,9 +782,10 @@ In member names an identity's `:` is written `-` (`artifacts/sha256-9c1e….mask
       "unportable": [ { "port": "plan", "artifact": { …reference… }, "reason": "rascal:Plan has portable: none" } ] } ] }
 ```
 
-- The container is an uncompressed ustar with fixed headers (fixed mode, owner and time, members
-  in a fixed order), so equal contents give equal bytes and the archive's SHA-256 names it, as
-  rascal's mask bundle (ADR 0022) does.
+- The container is an uncompressed ustar with fixed headers, as rascal's mask bundle (ADR 0022):
+  every member has mode 0644, uid and gid 0, mtime 0 and empty user and group names, and members
+  come in a fixed order (`invocation.json` first, then the rest sorted by name). Equal contents
+  give equal bytes, so the archive's SHA-256 names it.
 - `steps` lists the calls in order; a single call is one step. A later step names an earlier
   step's output by its reference, never by a path.
 - `inputs` lists each image a step took, by `slot` (images profile) or `port` (operations), with
@@ -839,10 +846,12 @@ Lifted from `rascal serve` (rascal ADR 0015).
 ### 5.1 Export and import (operations profile)
 
 A tool that declares any artifact type `portable: bundle` or `portable: json` (3.3) serves the
-reserved MCP tools `export` and `import`, and the commands `<tool> export --json` and
-`<tool> import --json`, which take the same input and print the same output. Like `estimate`
-they are controls, not runs: they write no run, never appear in `actions` and are never shown as
-history. Their failures are JSON-RPC errors.
+reserved MCP tools `export` and `import`, and the commands `<tool> export --json <file>` and
+`<tool> import --json <file>`, which read the same request from the file (or from stdin when it
+is `-`), like `estimate`, and print the same output. Like `estimate` they are controls, not
+runs: they write no run, never appear in `actions` and are never shown as history. Their
+failures are JSON-RPC errors; on the command line a refusal exits 64 (6) with the refusal JSON
+on stdout.
 
 ```jsonc
 // export: in, then out
@@ -886,7 +895,9 @@ A caller path is accepted only on a local transport (stdio), and only when its c
   same way at start, then narrowed by the tool's own configuration, which may only take away. With
   none, every path is refused. `<tool>://session` lists them as `allowed_dirs` (4.6), and they do
   not change during the session.
-- `<tool> call` (4.8) and `<tool> import` (5.1) take the same flag under the same rule.
+- `<tool> call` (4.8) and `<tool> import` (5.1) take the same flag under the same rule. The rule
+  governs `serve`, `call` and `import` only: a path a person passes on their own command line to
+  any other command of the tool stays theirs, outside the contract.
 - The rule covers every path a caller gives: images in (10.1), import files (5.1), bundles (4.8).
 - A refused path is an `invalid` result with code `input` in a run, or `-32602` with the
   `invalid_arguments` refusal in a control. The refusal says nothing about the file, not even
@@ -928,7 +939,8 @@ A conforming tool provides, at the contract version it names:
 6. Every profile it lists, conforming (12 for images). For operations: every operation with
    `ports` and a call that is a run (4.7); `artifact_types` (3.3) and artifact references with
    identities, never ids (3.4); the `binding` refusal in calls and in `estimate` (4.7);
-   `artifacts` in every result, with a preview on each out entry whose type has one (4.7); the
+   `artifacts` in every result, tasks' native outputs included, with a preview on each out entry
+   whose type has one (4.7); the
    artifact resource and its preview (4.7); `export` and `import` when any type is portable (5.1).
 7. The conformance fixtures in `fixtures/<tool>/` passing in its CI against its pinned release:
    `describe.json`, `run-*.json` results, `runs*.json` pages, `session.json` and `refusal-*.json`
@@ -948,10 +960,11 @@ A conforming tool provides, at the contract version it names:
    - Operation results `run-op-*.json` for a chain run one step at a time (rascal: Line, then
      Rasterize on its location, then Feather on the saved Mask with a new sigma), each with
      `artifacts.in` and `artifacts.out`, a preview on every out entry whose type has one, and the
-     same images and locations in `images` and `locations`.
+     same images and locations in `images` and `locations`; and a task result (rascal's
+     `remove`) listing the Mask it made in `artifacts.out`, which a later operation binds.
    - `refusal-binding-*.json`, one per problem (`wrong_type`, `wrong_version`, `wrong_frame`,
-     `unresolved` with its `remedy`), from a call and from `estimate`, and a request so refused
-     whose `client_run_id` is then accepted.
+     `unresolved` with its `remedy`), from a call and from `estimate`, one naming an item of a
+     `many` port by `index`, and a request so refused whose `client_run_id` is then accepted.
    - `artifact-*.json`, an artifact resource read, and the refusal for an identity not held.
    - `export-*.json` and `import-*.json`: a Mask exported and imported into an empty store
      (`already_present: false`), imported again (`true`), a Location imported inline, and
@@ -1167,7 +1180,8 @@ Any named image slot of any action accepts one of the following, or, when the sl
   imports, records the import as if the caller had asked for it, and runs on the result. It MUST
   NOT bypass its own record. Content addressing makes repeated imports one image.
 - A tool MAY also accept its own ids (rascal's workspace ids) in the same slots. A client that
-  knows only the contract never needs them.
+  knows only the contract never needs them. Artifact references (3.4) are the portable form, and
+  an operations tool MUST accept them wherever it takes an artifact.
 
 ### 10.2 Out
 

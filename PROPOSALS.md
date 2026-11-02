@@ -36,6 +36,22 @@ listing resource (the host keeps its own references); report asset relocation be
 self-contained document render (C3); the MCP revision move; network transports; durable ledgers
 across processes; prompt localisation (R2); operations in squint, which has no native types.
 
+**v0.4: questions settled while drafting (2026-11-01)**, decided by the coordinating session and
+written into CONTRACT.md: the operations sections keep the core's numbering, and `operations`
+requires `images` (1); `vocabulary` is a core object (3); a preview is required only where the
+type declares `preview: true` (4.7); `image` is not listed in `artifact_types` and its identity is
+`sha256:<file_sha256>` (3.3, 3.4); an operation's image and location inputs are ports only, also
+listed in `images` and `locations` (4.7, 11.1); `artifacts` is required in every result of an
+operations tool, and a task lists the natives it made in `artifacts.out` (4.7); a missed artifact
+read reuses `binding` with `port: null`, and a binding entry carries a 0-based `index` for items
+of a `many` port (4.7); `invocation` is null only on an `invalid` run whose arguments did not
+resolve, and `requirements` lists names (4.8); the bundle manifest always has `steps`, and the tar
+headers follow rascal ADR 0022 (4.9); `--allow-dir` governs `serve`, `call` and `import`, and a
+person's own command-line paths to other commands stay theirs (5.2); `export --json` and
+`import --json` read a file or `-`, and a command-line refusal exits 64 with the refusal JSON
+(5.1); `export` and `import` stay responsive while a run holds the permit (4.5); an operations
+tool MUST accept artifact references wherever it takes an artifact (10.1).
+
 **v0.3 (published 2026-11-01)** adopts, decided by the coordinating session that owns
 this repository: squint's items 1, 3, 4 and 5 below; Wafflehouse's C1 (readiness and its paid-path
 follow-up: configuration lifetime, estimate binding, the per-call cap, and estimates as controls);
