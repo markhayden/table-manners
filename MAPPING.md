@@ -7,7 +7,27 @@ not part of the contract; it is deleted once both conform.
 
 **Status 2026-11-01.** Both tools conform to v0.2.0 and pin `=0.2.0` from crates.io: rascal since
 milestone M11 (tag `m11`), squint since milestone M8 (tag `m8`). Wafflery (formerly Wafflehouse) pins `=0.2.0` as a
-client. v0.3 is being drafted in `PROPOSALS.md`. The v0.1 columns below are kept for review.
+client. Both tools conform to v0.3.0 by path, waiting on its publication; the work list is below. The v0.1 columns below are kept for review.
+
+## v0.3 (readiness, bound estimates, renders)
+
+Work for rascal milestone M12 (fixtures delivered from rascal `867735d`) and squint milestone M9 (fixtures from squint `9c4be13`); Wafflery adopts it as the client. Both tools
+build against this branch by path until v0.3.0 is published, then pin `=0.3.0`.
+
+| contract | squint | rascal |
+|---|---|---|
+| `describe` and `serve` work with no configuration; `--config <path>` (3.1, 4.6) | done (M9) | done (M12) |
+| per-action `readiness`, requirement states from local inspection and this session's answers; `cost.needs_env` gone (3.1) | done (M9) | done (M12) |
+| `estimate` reserved: `{action, arguments}` in, `estimate.json` out, never a run, out of `actions` (4.5) | done (M9) | done (M12) |
+| `binding` over action, args with images by digest, tool version, config identity, session; `expires` (4.5) | done (M9) | done (M12) |
+| `_meta["table-manners/estimate"]` checked at the limits check: `stale_estimate` (4.5) | done (M9) | done (M12) |
+| `cap` and `budget` split; `max_spend_usd` above the configured cap is `invalid` (2.2, 4.5) | done (M9) | done (M12) |
+| every paid action's `params_schema` declares `max_spend_usd`, `exclusiveMinimum: 0` (4.5) | done (M9) | done (M12) |
+| `credential` for 401/403 and a missing key, never retryable (2.2) | done (M9) | done (M12) |
+| JSON-RPC refusal releases the `client_run_id` (4.4) | done (M9) | done (M12) |
+| renders: `kind`, URL-only stdout, stdin/SIGTERM lifetime, `--frame-ancestor` (3.2) | done (M9) | done (M12) |
+| image slots `many` (10.1, 11.2) | done (M9) | n/a (no action takes a list; tested) |
+| v0.3 fixtures (7, item 7) | done (M9) | done (M12) |
 
 ## v0.2 (run association and the session)
 

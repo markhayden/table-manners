@@ -1,8 +1,10 @@
-# table-manners, v0.2.0
+# table-manners, v0.3.0
 
-Status: v0.2.0, tagged and published 2026-11-01. v0.1.0 (2026-10-30) plus run association and the
-session ledger, as squint and rascal agreed them (PROPOSALS.md, C4; "Changes from v0.1" below).
-Both tools' fixtures validate (7); field names and the schemas are binding.
+Status: **v0.3.0, ready to tag**, 2026-11-01. v0.2.0 plus readiness without configuration, bound
+estimates and checked caps, report renders a host can embed, list image slots, credential failures,
+and a claim released when a request gets no run ("Changes from v0.2" below). Both tools' fixtures
+validate (7): rascal M12, squint M9. The operations profile, portable artifacts (C2) and the
+replacement for MCP roots follow in v0.4.
 
 table-manners is the contract the waffle tools keep at a shared table: one external interface for
 squint (checks an image against what was asked), rascal (finds, masks and composites regions),
@@ -54,7 +56,9 @@ Sources: squint ADR 0018 and SPEC "External interface"; rascal's seed section in
   when a newer tag exists; an update is a deliberate commit in the tool.
 - v0.1 was the minimum the chain needs. v0.2 adds what squint's conformance and the playground's
   review found about long paid runs: a run a client can correlate, and a spend ledger it can
-  observe. The other proposals in `PROPOSALS.md` follow in later minors.
+  observe. v0.3 lets a host set a tool up and pay for a run safely: readiness without
+  configuration (3.1), estimates bound to their inputs and checked before paid work (4.5), and
+  report renders it can embed (3.2). The other proposals in `PROPOSALS.md` follow in later minors.
 
 ## 2. The result
 
@@ -65,7 +69,7 @@ while the tool may still be running. A **header** the contract owns and a **body
 
 ```jsonc
 {
-  "contract": "0.2.0",
+  "contract": "0.3.0",
   "tool": { "name": "squint", "version": "0.2.0" },
   "action": "check",
   "run": { "id": "decision-1793386884140-53022", "resource": "squint://run/decision-…/run.json",
@@ -107,13 +111,18 @@ Present exactly when `status` is `error` or `invalid`, and null otherwise:
 | `usage` | invalid | an unknown action, a missing or malformed argument |
 | `input` | invalid | an input the tool cannot take; for the images profile a digest mismatch, a path outside roots or over a network, a size over the limit, a location on another image |
 | `io` | error | reading or writing the tool's own files failed |
+| `stale_estimate` | invalid | the call named an estimate (4.5) that no longer matches it: other inputs, configuration, tool version or session, or past its `expires` |
 | `provider` | error | a remote model or service failed (a judge model, a filler endpoint) |
-| `budget` | error | the per-call cap or the session budget would be exceeded |
+| `credential` | error | a provider rejected the credential (HTTP 401 or 403) during the run; never retryable (a credential missing before the run is the `not_ready` refusal, 3.1) |
+| `cap` | error | the call's worst case is over its effective per-call cap (4.5) |
+| `budget` | error | the session budget cannot reserve the call's worst case (4.5) |
 | `timeout` | error | a bounded wait ran out |
 | `tool_process` | error | a helper process (a tool pack, a filler command) died, hung or answered out of contract |
 | `internal` | error | a bug in the tool |
 
-`retryable` is the tool's judgement for this occurrence (a 529 is, a 401 is not).
+`retryable` is the tool's judgement for this occurrence (a 529 is). `credential`, `cap`, `budget`
+and `stale_estimate` are never retryable unchanged: a person fixes a key, a cap, the budget or
+asks for a new estimate first.
 
 ### 2.3 The rest of the header
 
@@ -143,18 +152,21 @@ Present exactly when `status` is `error` or `invalid`, and null otherwise:
 
 ```jsonc
 {
-  "contract": "0.1.0",
+  "contract": "0.3.0",
   "profiles": ["images"],
   "tool": { "name": "squint", "version": "0.2.0", "purpose": "Checks an image against what was asked of it." },
   "actions": [
     {
-      "name": "check",
+      "name": "source_fidelity",
       "title": "Source fidelity",
       "purpose": "…",
       "params_schema": { …JSON Schema… },
-      "cost": { "may_spend": true, "basis": "measured", "needs_env": ["GEMINI_API_KEY"] },
+      "cost": { "may_spend": true, "basis": "measured" },
+      "readiness": { "state": "needs_setup", "requirements": [ …(3.1)… ] },
       "duration": { "typical_s": 40, "max_s": 600 },
-      "renders": [ { "name": "report", "command": ["squint", "report", "view", "{run.dir}", "--port", "0"] } ]
+      "renders": [ { "name": "report", "kind": "server", "ready_timeout_s": 10,
+                     "command": ["squint", "report", "view", "{run.dir}", "--port", "0",
+                                 "--frame-ancestor", "{frame_ancestor}"] } ]
       // the images profile adds "images", "locations" and "outputs" (11.2)
     }
   ],
@@ -168,12 +180,96 @@ Present exactly when `status` is `error` or `invalid`, and null otherwise:
 
 - `profiles` lists the profiles the tool implements; `[]` for a core-only tool.
 - `params_schema` is a JSON Schema for the action's arguments other than those a profile adds.
-- `needs_env` names variables; a tool MUST NOT print their values. A client shows whether each is
-  set. `cost.basis` is required when `cost.may_spend` is true.
+  Choices a caller may make (a model, a filler) are arguments in it, with the default the tool
+  uses when they are absent; what the tool actually used is in the estimate (4.5) and the run.
+- `cost.basis` is required when `cost.may_spend` is true.
+- `readiness` says whether the action can run here, now, and what is missing (3.1).
 - `duration` lets a client set its timeout up front, and `progress_interval_s` (at most 10) is the
   longest gap between progress notifications on a live run (4.1).
-- Action names are lowercase with underscores (`check`, `seam_heal`); `describe` is reserved.
-- `renders` are commands that show a run to a person; `{run.dir}` is substituted.
+- Action names are lowercase with underscores (`check`, `seam_heal`); `describe` and `estimate`
+  are reserved (5) and never appear in `actions`.
+- `renders` show a run to a person (3.2).
+- `describe` works with no configuration, no credentials and no network (3.1), and is cheap: a
+  host calls it again to refresh readiness.
+
+### 3.1 Readiness
+
+An installed tool MUST describe itself without its configuration: a missing or invalid config
+file, or missing credentials, never makes `describe` fail or exit non-zero. It says instead, per
+action, what stands between the action and a run:
+
+```jsonc
+"readiness": {
+  "state": "needs_setup",
+  "requirements": [
+    { "kind": "config", "name": "squint.toml", "state": "missing",
+      "setup": "Run `squint init` or pass --config <path>." },
+    { "kind": "credential", "name": "ANTHROPIC_API_KEY", "state": "present",
+      "setup": "Set ANTHROPIC_API_KEY in the environment squint is started with." },
+    { "kind": "model", "name": "claude-sonnet-5-5", "state": "valid" }
+  ]
+}
+```
+
+- `state` is `ready` (no requirement is `missing` or `invalid`), `needs_setup` (one is, and the
+  person can fix it), or `unavailable` (this build or platform cannot run the action at all; a
+  requirement says why).
+- A requirement's `kind` is `config`, `credential`, `env` (a variable the tool reads that is not a
+  secret, such as a model directory), `model` (a model or endpoint the action calls, as
+  configured), `file` (a local file it needs, such as model weights) or `dependency` (a helper
+  program or library).
+- An action's readiness describes the action as the tool is configured now (a configured filler
+  is part of its use), and its requirements name every variable that use reads, so a host that
+  passes only the variables requirements name passes enough. A call is refused for a requirement only when
+  that call needs it: a call that needs a `missing` or `invalid` requirement is refused before
+  any run, as a JSON-RPC error `-32602` with `data` `{"reason": "not_ready", "run": null,
+  "requirements": [...]}` (`schemas/core/refusal.json`) naming what it needs, so it writes no run,
+  spends nothing and releases its `client_run_id` (4.4). A call that does not need it (an action
+  whose filler is optional, called without one) runs. A provider that rejects a credential during
+  a run is `credential` (2.2). An estimate's `readiness` (4.5) is the call's own.
+- A configuration is `present` when it loads and `invalid` when it does not parse. The names in
+  the examples here are illustrative; each tool names its own files, variables and commands.
+- A requirement's `state`:
+
+  | state | meaning |
+  |---|---|
+  | `missing` | not there: no such variable, file or config entry |
+  | `present` | there, and not checked; finding a key never makes it `valid` |
+  | `valid` | a provider accepted it in this session (a known answer, 4.5, that was not a rejection); for a `file`, the tool checked its digest in this session |
+  | `invalid` | there and rejected: a provider answered 401 or 403 to it in this session, or the file or config entry does not parse |
+  | `unknown` | the tool cannot tell (a credential held somewhere it does not inspect) |
+
+- Describing is a **local inspection**: it MUST NOT make a network call, start a paid step or
+  write a run. It need not hash large files: an unchecked file is `present`. `valid` and `invalid` for a credential come only from provider answers the session
+  already had, so a fresh session shows `present` until a real call settles it.
+- `name` is a variable, file or entry name; `setup` is a sentence a person can act on. Neither
+  ever carries a credential value, and a tool MUST NOT print one.
+- A credential a call needs and does not have is not a provider call: the call is refused
+  `not_ready` before any run.
+
+### 3.2 Renders
+
+A render is a command that shows a run to a person. Its `command` is an argv; the host substitutes
+`{run.dir}` (the run directory) and, for a server, `{frame_ancestor}`, each only where it is a whole
+argument, and runs it without a shell. A render never modifies the run directory. Its
+`command[0]` is the tool's own name (`tool.name`), and the host runs the same executable it
+serves, never another program and never another install found on `PATH`.
+
+- `kind: "document"` writes one self-contained file (images and styles inline, nothing it needs
+  beside it) at a path the tool chooses outside the run directory, and exits. Its only stdout is
+  one line, the absolute path of that file. Exit 0 means the file exists. The host reads that one
+  file and nothing next to it.
+- `kind: "server"` serves a page over HTTP on loopback. Once it is listening it prints exactly one
+  line to stdout, the URL (`http://127.0.0.1:<port>/…`), and nothing else ever. It binds port 0
+  unless the command says otherwise. It serves until its stdin closes or it receives SIGTERM, then
+  exits; the host owns the process. It allows framing only by the one origin given as
+  `{frame_ancestor}` (`Content-Security-Policy: frame-ancestors <origin>`), never loopback in
+  general; the host passes its own origin, for example `http://127.0.0.1:4801`.
+  `ready_timeout_s` (at most 60) bounds the wait for the URL line. It exits 0 when its stdin closes
+  or on SIGTERM.
+- A render that exits non-zero, or prints no line in time, failed to start. Its stderr is for
+  people. A failed render never changes the run's status.
+- Renders need a local run directory. A run whose `run.dir` is null has no render.
 
 ## 4. Long runs
 
@@ -261,20 +357,29 @@ non-null id is used at most once:
   permit, so concurrent requests with one id execute at most once.
 - A request whose id is already claimed is refused before any run exists, as a JSON-RPC error:
   `-32602` with `data` per `schemas/core/refusal.json`, `{"reason": "client_run_id_reused",
-  "run": <the earlier request's run reference>}`. `run` is null while the earlier request has no
-  run (it is still waiting, or it was cancelled before allocation).
-- A claimed id stays claimed for the session even when its request is cancelled before
-  allocation; a client that retries such a request uses a new id.
+  "run": <the earlier request's run reference>}`. `run` is null only while the earlier request
+  is still waiting for the permit, or when it was cancelled before allocation.
+- A request that ends in a JSON-RPC error with no run (invalid params, a failed `roots/list`, any
+  refusal in 5) **releases** its id: the client fixes the request and retries under the same id.
+- A request cancelled before allocation keeps its id claimed for the session; a client that
+  retries it uses a new id.
 - The refusal never stands for the new request's result. The client reconciles the earlier run
   with its own saved attempt; it does not retry automatically.
 
 This is not exactly-once execution across processes: a new session forgets the ids it never saw.
 
-### 4.5 Spend limits
+### 4.5 Spend limits and estimates
 
-- A per-call cap in the tool's config. A call MAY lower it (`max_spend_usd`); it MUST NOT raise it.
+- A per-call cap in the tool's config. A call MAY lower it with the argument `max_spend_usd`; a
+  value above the configured cap is `invalid` (`usage`), never silently lowered. Every action whose
+  `cost.may_spend` is true declares `max_spend_usd` in its `params_schema` as an optional
+  `{"type": "number", "exclusiveMinimum": 0}`, so a host can always pass its cap however
+  closed the rest of the schema is. A cap of zero is not a cap; a caller that must not spend does
+  not call.
 - A per-session budget in the tool's config, across every call the server process serves.
-- Both limits are enforced. The limits check **reserves** the call's worst case into the
+- Both limits are enforced at the **limits check**, after allocation and before any paid step.
+  The check fails the run with `cap` when the call's worst case is over its effective cap, and
+  with `budget` when the session cannot hold it. Otherwise it **reserves** the worst case into the
   session's `reserved_usd` in the same atomic step, so two concurrent calls never pass the check
   against the same spend; the run's end **settles** the reservation into `spent_usd`.
 - Every provider call is one of three:
@@ -292,16 +397,71 @@ This is not exactly-once execution across processes: a new session forgets the i
 
   All of this holds whatever the run's status. Unknown spend is never reported as zero and its
   reservation is never released.
-- Every result reports spend (2.3). A tool that may spend provides an `estimate` action. An
-  estimate MUST NOT spend; it reports the worst case for the given call and the effective per-call
-  cap (the configured cap lowered by `max_spend_usd`). An estimate MAY be a run (squint's is, with
-  zero spend) or not (rascal's). Where the session observation sits in an estimate's result is
-  fixed with readiness (PROPOSALS.md, C1); until then a client reads `<tool>://session`, and a
-  tool carries no private copy of the session in its estimate body.
+- Every result reports spend (2.3).
+
+**Estimates.** A tool with any action whose `cost.may_spend` is true serves the reserved MCP tool
+`estimate` (5) and the command `<tool> estimate --json`; any other tool MAY. Its arguments are the action's name and
+exactly the arguments the paid call would send:
+
+```jsonc
+{ "action": "source_fidelity", "arguments": { …the call's arguments, images included… } }
+```
+
+It answers with an estimate (`schemas/core/estimate.json`) as `structuredContent`:
+
+```jsonc
+{ "contract": "0.3.0", "tool": { "name": "squint", "version": "0.2.0" },
+  "action": "source_fidelity",
+  "binding": "sha256:…",
+  "session_id": "0b7e3c5a-…",
+  "effective": { "model": "claude-sonnet-5-5", "config_identity": "sha256:…" },
+  "worst_case_usd": 0.12, "cap_usd": 0.5,
+  "allowed": true, "refused": null,
+  "readiness": { "state": "ready", "requirements": [ … ] },
+  "session": { …the session observation (4.6)… },
+  "expires": "2026-11-01T20:15:00.000Z" }
+```
+
+- An estimate MUST NOT spend, call a provider or write a run. Since it is never a run, its failures
+  are JSON-RPC errors: arguments the input schema rejects are plain invalid params (`-32602`);
+  any other wrong request (`max_spend_usd` above the configured cap, an `expect` that does not
+  match, an unknown action) is `-32602` with refusal data `{"reason": "invalid_arguments",
+  "run": null, "error": {…the error object, 2.2: `usage` or `input`, not retryable…}}`. A call
+  that is not ready is not an error: its estimate is `refused: "readiness"`. It never waits for the permit (see
+  below). It is a control request, not history; a host never shows it as an attempt.
+- `binding` is a digest the tool computes over the action, the arguments after resolving every
+  image to its file digest (8.1), the tool version, the effective configuration
+  (`effective.config_identity`) and the session id. Arguments that only choose how results are
+  delivered (the images profile's `return_images` and `image_blocks`, 10.2) are left out. Its recipe is the tool's; two estimates with
+  equal bindings priced the same call.
+- `effective` names what the call would use where the arguments leave a choice to the tool:
+  `model` (null when the action calls none) and `config_identity`, a digest of the configuration
+  in force: the loaded file, or the tool's built-in defaults when it runs without one. A tool MAY add fields under `x-<tool>`.
+- `worst_case_usd` is what the limits check would reserve. When the call cannot be priced (it
+  needs a configuration or a model the tool lacks), the estimate is `refused: "readiness"` with
+  `worst_case_usd` null and, when the missing piece is the configuration, `effective.config_identity`
+  null; never a made-up zero. A call that needs nothing missing is priced as usual, at 0 when it
+  spends nothing. `cap_usd` is the effective per-call cap
+  (the configured cap lowered by `max_spend_usd`), null when uncapped; null is never zero.
+- `allowed` is whether the limits check would pass right now. When it is false, `refused` is
+  `cap`, `budget` or `readiness` (the action is not `ready`); otherwise null.
+- `session` is one atomic observation of the session (4.6), the same document as
+  `<tool>://session`. An estimate from the command line has no session: `session_id` and
+  `session` are null, and no server accepts its binding.
+- `expires` is when the tool stops honouring the binding (prices and catalogs change). It is the
+  tool's choice, at most 24 hours after the estimate.
+
+**Binding a call to its estimate.** A caller MAY send `_meta["table-manners/estimate"]: "<binding>"`
+on the paid `tools/call`. The tool recomputes the binding for the call as it arrives; if it
+differs, or the estimate has expired, the run fails with `stale_estimate` at the limits check,
+before any paid step and with zero spend. A call that names no estimate is checked against the
+limits alone. Either way the tool stays authoritative across concurrent clients: an estimate is
+never a reservation, and `allowed: true` does not promise the limits check will pass.
+
 - Calls are serial by default; a tool MAY allow more with a concurrency setting. Execution
   concurrency does not depend on whether an action costs money. While a run holds the execution
-  permit, `describe`, local estimates, every resource read (runs, a run, its journal, the
-  session) and cancellation MUST stay responsive: none of them waits for the permit.
+  permit, `describe`, `estimate`, every resource read (runs, a run, its journal, the session) and
+  cancellation MUST stay responsive: none of them waits for the permit.
 - A per-period budget (a day, a month) is later work: it needs a durable ledger across processes.
 
 ### 4.6 The session
@@ -310,21 +470,28 @@ A **session** is one serving process's spend ledger. `<tool>://session`
 (`schemas/core/session.json`) returns one atomic observation of it:
 
 ```jsonc
-{ "contract": "0.2.0", "tool": { "name": "rascal", "version": "0.1.0" },
+{ "contract": "0.3.0", "tool": { "name": "rascal", "version": "0.1.0" },
   "id": "0b7e3c5a-6f1d-4c2e-9a8b-3d4e5f6a7b8c", "started": "2026-10-31T18:02:11.530Z",
   "budget_usd": 2.0, "spent_usd": 0.16, "unresolved_usd": 0.04, "reserved_usd": 0.04,
   "remaining_usd": 1.8 }
 ```
 
-- `id` is a random UUID (v4), lowercase, generated when `serve` starts. A tool that reloads its
-  configuration or resets its ledger starts a new session with a new id; neither squint nor rascal
-  does today, so their sessions last the process.
+- `id` is a random UUID (v4), lowercase, generated when `serve` starts.
+- **Configuration belongs to the session.** `serve` reads the tool's configuration once, at start;
+  the host chooses it only by the tool's own `--config <path>` argument, or leaves the tool's
+  default lookup. A host never reads or writes a tool's configuration, and passes the child only
+  its own minimal environment plus the variables the description's requirements name (3.1); keys
+  stay with the tool and the OS. To take up a changed configuration or credential, the host
+  restarts the server deliberately and the person sees a new session id with a fresh ledger; it
+  never restarts silently to refresh an allowance. A tool that reloads or resets its ledger in
+  process starts a new session with a new id; neither squint nor rascal does.
 - `started` is RFC 3339 UTC, like every timestamp.
 - `spent_usd` is settled spend and includes `unresolved_usd`; `reserved_usd` is the worst cases
   held by runs still going.
 - `budget_usd` and `remaining_usd` are null together, exactly when the session is uncapped; null
   is never a zero allowance. `remaining_usd = max(0, budget_usd - spent_usd - reserved_usd)`.
-- Amounts are US dollars. Tools write them with at most six decimals and clients compare them to
+- Amounts are US dollars. Tools write them with at most six decimals (a property of the value:
+  `1e-6` is six decimals) and clients compare them to
   1e-6.
 - A session is not a daily budget or a provider account balance. When a server restarts, a client
   sees a new id; what an interrupted session left unresolved stays unresolved in its runs.
@@ -336,20 +503,26 @@ Lifted from `rascal serve` (rascal ADR 0015).
 - `<tool> serve` speaks MCP over stdio at protocol revision **`2025-11-25`** only, and refuses a
   client that cannot meet it at `initialize`. Moving revision is a contract change.
 - Capabilities: `tools` (with pagination), `resources` (run resources), progress, cancellation.
-- One MCP tool per action in the description, plus `describe`; each tool's input schema is its
-  action's `params_schema` with the arguments its profiles add. A server MUST NOT require an
-  injected context object: a client needs nothing but the description.
+- One MCP tool per action in the description, plus `describe`, plus `estimate` when any action
+  may spend (4.5); each action tool's input schema is its action's `params_schema` with the
+  arguments its profiles add. `estimate`'s input is `{action, arguments}` (4.5).
+- `<tool> serve` accepts `--config <path>` (4.6) and, like `describe`, starts without a
+  configuration: its actions then report `needs_setup`, and a call that needs what is missing is
+  refused `not_ready` (3.1).
+- A server MUST NOT require an injected context object: a client needs nothing but the
+  description.
 - Once a run exists, every outcome is an MCP tool result carrying the header and body as
   `structuredContent`: `isError: false` for `completed`, `isError: true` for `invalid` and
   `error`. The header is the point: spend to date, `retryable` and salvaged outputs (2.3) travel
   only in a result, and a JSON-RPC error reaches a model client as an opaque failure.
 - JSON-RPC errors are reserved for failures before a run exists: an unknown tool, arguments the MCP
-  layer rejects against the input schema, a reused `client_run_id` (4.4), the server itself
-  failing. A refusal the contract names carries `data.reason` (`schemas/core/refusal.json`) so a
-  host can tell it from other invalid params.
+  layer rejects against the input schema, a reused `client_run_id` (4.4), a call that is not ready
+  (3.1), the server itself failing. A refusal the contract names carries `data.reason` (`schemas/core/refusal.json`) so a
+  host can tell it from other invalid params. Such an error releases the request's
+  `client_run_id` (4.4).
 - The contract's request and notification metadata lives in MCP's `_meta` under keys prefixed
-  `table-manners/` (`table-manners/run`, `table-manners/client_run_id`), so it needs no MCP
-  revision of its own.
+  `table-manners/` (`table-manners/run`, `table-manners/client_run_id`,
+  `table-manners/estimate`), so it needs no MCP revision of its own.
 - Rust tools SHOULD use the official SDK, `rmcp`, pinned exactly; rascal and squint pin `=3.8.0`.
   A tool in another language uses its official SDK at the same revision.
 - Every tool's test suite drives its server with an independently written client that shares no
@@ -370,7 +543,8 @@ Lifted from `rascal serve` (rascal ADR 0015).
 
 A conforming tool provides, at the contract version it names:
 
-1. `describe --json` and the `describe` MCP tool (3), validated against the schema in its tests.
+1. `describe --json` and the `describe` MCP tool (3), validated against the schema in its tests,
+   working with no configuration (3.1); renders as in 3.2.
 2. `serve` (5) with an action per description entry, progress with the run reference (4.1),
    cancellation (4.2), run resources and the paged runs list (4.3), correlation ids (4.4), spend
    limits with reservation and the three-way accounting where it spends (4.5), and the session
@@ -386,7 +560,31 @@ A conforming tool provides, at the contract version it names:
    reuse refusals. A release is tagged only when every tool's fixtures validate against it. For
    v0.2 they include accepted, reused and mismatched client ids, cancels before and after
    allocation, unresolved spend, a reservation in flight, a restarted session and a read while
-   the permit is held.
+   the permit is held. For v0.3 they add: `describe-unconfigured.json` (no configuration),
+   `describe-*.json` with a missing, a present, a valid and an invalid credential and a `ready`
+   action; `estimate-*.json` (allowed, refused for `cap`, `budget` and `readiness`); results
+   failed with `stale_estimate` (changed image, argument, configuration, session; expired), `cap`,
+   `budget` and `credential`; a request refused with no run whose id is then accepted, and one
+   cancelled before allocation whose id is still refused; and proof in the tool's own tests that
+   `describe` and `estimate` made no provider call.
+
+## Changes from v0.2
+
+Breaking, as a minor before 1.0 may be (1):
+
+- `estimate` is a reserved MCP tool with the input `{action, arguments}` and its own result
+  shape (`schemas/core/estimate.json`); it is never a run and never appears in `actions` (4.5).
+- `cost.needs_env` is gone; each action's `readiness` names its requirements instead (3.1).
+- Every action carries `readiness` (3.1); `describe` and `serve` work with no configuration.
+- Every render carries `kind`, and a server render prints only its URL and frames only for
+  `{frame_ancestor}` (3.2).
+- `max_spend_usd` above the configured cap is `invalid`, not lowered (4.5).
+- `budget` covers the session only; the per-call cap is `cap` (2.2).
+- A request refused with a JSON-RPC error releases its `client_run_id` (4.4).
+
+Added: the `not_ready` refusal (3.1); error codes `credential`, `cap` and `stale_estimate` (2.2); estimate binding with
+`_meta["table-manners/estimate"]` (4.5); configuration owned by the session and chosen by
+`--config` (4.6); image slots that take a list (`many`, 10.1, 11.2).
 
 ## Changes from v0.1
 
@@ -529,7 +727,8 @@ copy or any other frame internal to a tool.
 
 ### 10.1 In
 
-Any named image slot of any action accepts one of:
+Any named image slot of any action accepts one of the following, or, when the slot is `many`
+(11.2), a non-empty array of them:
 
 ```jsonc
 { "path": "/abs/path/to/pano.png", "expect": { …image reference… } }
@@ -579,7 +778,8 @@ Every image a tool returns is an **image out**: its reference, its role, and one
 
 - Both are REQUIRED in every result of an images tool, empty lists where there is nothing.
 - `images.in` lists each image the run took in as `{ slot, role, image }`: the slot it came
-  through, its role and its reference, never its bytes. `images.out` lists image outs (10.2).
+  through, its role and its reference, never its bytes. A `many` slot appears once per image, in
+  the order given. `images.out` lists image outs (10.2).
   Roles come from the tool's description (`candidate`, `source`, `result`, `mask`, …).
 - `locations.used` are those the run took in; `locations.found` those it produced.
 - Images and locations MAY be present on `error` and `cancelled` (2.3).
@@ -589,7 +789,7 @@ Every image a tool returns is an **image out**: its reference, its role, and one
 ```jsonc
   // on each action
   "images": [ { "slot": "candidate", "role": "candidate", "required": true },
-              { "slot": "source", "role": "source", "required": true } ],
+              { "slot": "references", "role": "reference", "required": false, "many": true } ],
   "locations": [ { "slot": "allowed", "kinds": ["mask", "bbox", "polygon"], "required": false } ],
   "outputs": { "images": [], "locations": ["found"] },
   // at the top level
@@ -600,7 +800,8 @@ Every image a tool returns is an **image out**: its reference, its role, and one
 ```
 
 - All five are REQUIRED in the description of an images tool, and absent otherwise.
-- An action's `images` lists its image slots with the role each plays; `locations` lists its
+- An action's `images` lists its image slots with the role each plays; `many` (default false)
+  says the slot takes a list; `locations` lists its
   location slots with the kinds each accepts; `outputs` names the roles of the images it returns
   and whether it fills `locations.found`.
 - `vocabulary` lists every word the tool emits in a location's `disposition`, `confidence`,

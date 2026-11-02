@@ -1,0 +1,40 @@
+{
+  "contract": "0.3.0",
+  "tool": {
+    "name": "rascal",
+    "version": "0.1.0"
+  },
+  "action": "seam",
+  "binding": "sha256:3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f",
+  "session_id": "0b7e3c5a-6f1d-4c2e-9a8b-3d4e5f6a7b8c",
+  "effective": {
+    "model": null,
+    "config_identity": "sha256:b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2",
+    "x-rascal": {
+      "filler": "lama"
+    }
+  },
+  "worst_case_usd": 0.0,
+  "cap_usd": null,
+  "allowed": true,
+  "refused": null,
+  "readiness": {
+    "state": "ready",
+    "requirements": []
+  },
+  "session": {
+    "contract": "0.3.0",
+    "tool": {
+      "name": "rascal",
+      "version": "0.1.0"
+    },
+    "id": "0b7e3c5a-6f1d-4c2e-9a8b-3d4e5f6a7b8c",
+    "started": "2026-10-31T18:02:11.530Z",
+    "budget_usd": null,
+    "spent_usd": 0.16,
+    "unresolved_usd": 0.04,
+    "reserved_usd": 0.04,
+    "remaining_usd": null
+  },
+  "expires": "2026-11-01T20:15:00.000Z"
+}

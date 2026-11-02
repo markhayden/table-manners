@@ -1,5 +1,5 @@
 {
-  "contract": "0.2.0",
+  "contract": "0.3.0",
   "profiles": [
     "images"
   ],
@@ -23,6 +23,12 @@
           "slot": "source",
           "role": "source",
           "required": true
+        },
+        {
+          "slot": "references",
+          "role": "reference",
+          "required": false,
+          "many": true
         }
       ],
       "locations": [
@@ -41,6 +47,11 @@
         "properties": {
           "prompt": {
             "type": "string"
+          },
+          "max_spend_usd": {
+            "type": "number",
+            "exclusiveMinimum": 0,
+            "description": "Lowers the configured per-call cap; never raises it."
           }
         },
         "required": [
@@ -55,9 +66,32 @@
       },
       "cost": {
         "may_spend": true,
-        "basis": "measured",
-        "needs_env": [
-          "GEMINI_API_KEY"
+        "basis": "measured"
+      },
+      "readiness": {
+        "state": "ready",
+        "requirements": [
+          {
+            "kind": "config",
+            "name": "squint.toml",
+            "state": "present"
+          },
+          {
+            "kind": "credential",
+            "name": "ANTHROPIC_API_KEY",
+            "state": "valid",
+            "setup": "Set ANTHROPIC_API_KEY in the environment squint is started with."
+          },
+          {
+            "kind": "model",
+            "name": "claude-sonnet-5-5",
+            "state": "present"
+          },
+          {
+            "kind": "env",
+            "name": "SQUINT_MODEL_DIR",
+            "state": "present"
+          }
         ]
       },
       "duration": {
@@ -67,39 +101,30 @@
       "renders": [
         {
           "name": "report",
+          "kind": "server",
+          "ready_timeout_s": 10,
           "command": [
             "squint",
             "report",
             "view",
             "{run.dir}",
             "--port",
-            "0"
+            "0",
+            "--frame-ancestor",
+            "{frame_ancestor}"
+          ]
+        },
+        {
+          "name": "export",
+          "kind": "document",
+          "command": [
+            "squint",
+            "report",
+            "export",
+            "{run.dir}"
           ]
         }
       ]
-    },
-    {
-      "name": "estimate",
-      "title": "Estimate",
-      "purpose": "The worst-case spend of a check and the session budget left.",
-      "images": [],
-      "locations": [],
-      "params_schema": {
-        "type": "object"
-      },
-      "outputs": {
-        "images": [],
-        "locations": []
-      },
-      "cost": {
-        "may_spend": false,
-        "needs_env": []
-      },
-      "duration": {
-        "typical_s": 0,
-        "max_s": 1
-      },
-      "renders": []
     }
   ],
   "vocabulary": {

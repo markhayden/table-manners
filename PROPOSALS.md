@@ -3,9 +3,19 @@
 Changes the tools' conformance work found the contract needs. Each names who found it and the
 evidence; none is binding until it lands in CONTRACT.md and the schemas at a tag.
 
-**v0.2 carries C4 only** (run association and budget sessions, below), drafted into CONTRACT.md
-sections 2.3, 4 and 4.6 and the schemas `run-ref`, `session` and `refusal`. Items 1 to 5 from
-squint's conformance stay proposed for v0.3 with C1 (readiness).
+**v0.2 carried C4** (run association and budget sessions, below).
+
+**v0.3 (draft in CONTRACT.md, 2026-11-01)** adopts, decided by the coordinating session that owns
+this repository: squint's items 1, 3, 4 and 5 below; Wafflehouse's C1 (readiness and its paid-path
+follow-up: configuration lifetime, estimate binding, the per-call cap, and estimates as controls);
+C3 (render readiness, framing and lifetime); and option (a) of "a claim released when the request
+gets no run". Two choices go further than the proposals, to take tech debt out rather than carry
+two shapes: estimates are never runs (squint's zero-spend estimate runs go), and `cost.needs_env`
+is replaced by per-action readiness requirements.
+
+**Left for v0.4:** item 2 (the replacement for MCP roots), C2 (invocation snapshots and portable
+artifacts), the operations profile (Wafflehouse R3, rascal M10.1), and C1's grouping of tasks,
+operations and utilities, which needs that profile's definition of an operation.
 
 ## From squint's conformance (M7, 2026-10-31)
 
@@ -188,3 +198,27 @@ corrected request under the same id is the case the id exists for. `run: null` o
 then means only a request still waiting for the permit or one cancelled before allocation.
 Fixtures: a refused request whose id is accepted on the retry, and a cancelled one whose id is
 still refused.
+
+## v0.3: questions settled while the tools planned it (2026-11-01)
+
+From rascal's M12 plan, decided by the coordinating session and written into CONTRACT.md:
+a call fails for a requirement only when it needs it (3.1); a non-secret variable is an `env`
+requirement; a `file` may be `valid` when its digest was checked in the session; render
+placeholders are whole arguments only and a render never modifies the run directory (3.2); a
+command-line estimate has null `session_id` and `session`; the binding leaves out
+`return_images` and `image_blocks`; any tool MAY serve `estimate`, one that may spend MUST (4.5).
+
+From squint's M9 plan: a call that needs a missing or invalid requirement is refused before any
+run with the `not_ready` refusal naming the requirements (3.1); an estimate that cannot be priced
+is `refused: "readiness"` with `worst_case_usd` and, without configuration, `config_identity`
+null; a configuration is `present` when it loads, `invalid` when it does not parse; a server
+render exits 0 on stdin EOF or SIGTERM (3.2).
+
+Then: readiness describes the action as configured now, and its requirements name every variable
+that use reads; `config_identity` digests the built-in defaults when no file is loaded, so a call
+that spends nothing is estimated at 0 without a configuration (3.1, 4.5).
+
+From Wafflery's v0.3 client plan: a render's `command[0]` is the tool's own name and the host runs
+the executable it serves (3.2); a document render writes one self-contained file outside the run
+directory (3.2); an estimate's wrong request is `-32602` with the `invalid_arguments` refusal
+carrying the error object (4.5).
