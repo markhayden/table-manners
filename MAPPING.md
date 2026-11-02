@@ -21,14 +21,14 @@ branch by path until v0.4.0 is published, then pin `=0.4.0`.
 | every action carries `kind` (`task`, `operation`, `utility`); optional `group`, listed in the core's `vocabulary.group` (3) | to do | to do |
 | `vocabulary` is a core object; the images profile's four lists live in it as before (3, 11.2) | to do | to do |
 | `export` and `import` are reserved action names, beside `describe` and `estimate` (3, 5) | to do | to do |
-| `profiles` lists `operations` (with `images`); top-level `artifact_types` with `schema_versions`, `portable` and `preview` (1, 3.3) | to do | to do |
-| artifact references: type, schema version, tool, identity (never a workspace id), opaque frame, optional `on`, resource; accepted wherever an artifact is taken (3.4, 10.1) | to do | to do |
-| operations: `kind: "operation"` with `ports` (`in`, `out`), in-ports in the MCP input schema, `images`/`locations` `[]`; every call a run (4.7) | to do | to do |
-| the `binding` refusal before any run, from calls and `estimate`: per-reference `port`, `index` for `many` items, `problem`, `expected`, `got`, `remedy` for `unresolved`; releases the `client_run_id` (4.5, 4.7) | to do | to do |
-| estimate bindings digest artifact references by identity (4.5) | to do | to do |
-| `artifacts {in, out}` in every result, tasks' native outputs included, a `preview` on each out entry whose type has one; images and locations also in `images`/`locations` (4.7, 11.1) | to do | to do |
-| `<tool>://artifact/{identity}` and `/preview`; a missed read is the `binding` refusal with `port: null` (4.7) | to do | to do |
-| `export` and `import` tools and `<tool> export --json`/`import --json`: controls, never runs; refusals `binding` or `invalid_arguments`; import idempotent by identity (5.1) | to do | to do |
+| `profiles` lists `operations` (with `images`); top-level `artifact_types` with `schema_versions`, `portable` and `preview` (1, 3.3) | n/a (no operations profile in v0.4) | to do |
+| artifact references: type, schema version, tool, identity (never a workspace id), opaque frame, optional `on`, resource; accepted wherever an artifact is taken (3.4, 10.1) | n/a (no operations profile in v0.4) | to do |
+| operations: `kind: "operation"` with `ports` (`in`, `out`), in-ports in the MCP input schema, `images`/`locations` `[]`; every call a run (4.7) | n/a (no operations profile in v0.4) | to do |
+| the `binding` refusal before any run, from calls and `estimate`: per-reference `port`, `index` for `many` items, `problem`, `expected`, `got`, `remedy` for `unresolved`; releases the `client_run_id` (4.5, 4.7) | n/a (no operations profile in v0.4) | to do |
+| estimate bindings digest artifact references by identity (4.5) | n/a (no operations profile in v0.4) | to do |
+| `artifacts {in, out}` in every result, tasks' native outputs included, a `preview` on each out entry whose type has one; images and locations also in `images`/`locations` (4.7, 11.1) | n/a (no operations profile in v0.4) | to do |
+| `<tool>://artifact/{identity}` and `/preview`; a missed read is the `binding` refusal with `port: null` (4.7) | n/a (no operations profile in v0.4) | to do |
+| `export` and `import` tools and `<tool> export --json`/`import --json`: controls, never runs; refusals `binding` or `invalid_arguments`; import idempotent by identity (5.1) | n/a (no operations profile in v0.4) | to do |
 | `invocation` on every result (null only on an unresolved `invalid` run): resolved arguments without locators, `effective`, requirement names (file names only, never paths) (2.3, 4.8) | to do | to do |
 | `<tool> call <action> --arguments <file> [--config] [--allow-dir]…` and `--bundle` replay (4.8, 4.9) | to do | to do |
 | invocation bundle manifest and byte-stable ustar layout (host-built; tools replay it) (4.9) | to do | to do |
