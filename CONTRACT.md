@@ -802,6 +802,9 @@ In member names an identity's `:` is written `-` (`artifacts/sha256-9c1e….mask
 - Replay, by a host or by `<tool> call --bundle` (4.8): import each artifact, put each input
   under an allowed directory (5.2), and call each step with its `invocation.arguments` plus
   locators. A live judgment (a model's verdict) is not promised to repeat; only the call is.
+  An argument naming an earlier step's output binds to that step's output in this replay, by port,
+  not to the recorded identity: a non-deterministic step (a filler) may produce a different
+  artifact, and the chain uses it. The replay reports each such change; it is not an error.
 - Reconstruction (rerunning an artifact's provenance instead of carrying it) is not a bundle
   feature: it would rerun upstream steps, which an operation never does.
 - A host's evidence archive (results and pictures to read, not to run) is a separate thing and is
@@ -893,8 +896,10 @@ A caller path is accepted only on a local transport (stdio), and only when its c
 (absolute, with `.`, `..` and every symlink resolved) lies inside a directory the session allows.
 
 - The allowed directories are those given by `serve --allow-dir <abs>` (repeatable), resolved the
-  same way at start, then narrowed by the tool's own configuration, which may only take away. With
-  none, every path is refused. `<tool>://session` lists them as `allowed_dirs` (4.6), and they do
+  same way at start, then narrowed by the tool's own configuration, which may only take away: the
+  effective set is the overlap (a configured directory counts only where it lies inside a flag
+  directory). With none, every path is refused. A relative, missing or non-directory
+  `--allow-dir` is an error at start (exit 64), never silently dropped. `<tool>://session` lists them as `allowed_dirs` (4.6), and they do
   not change during the session.
 - `<tool> call` (4.8) and `<tool> import` (5.1) take the same flag under the same rule. The rule
   governs `serve`, `call` and `import` only: a path a person passes on their own command line to

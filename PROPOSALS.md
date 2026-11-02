@@ -269,3 +269,8 @@ From Wafflery's v0.3 client plan: a render's `command[0]` is the tool's own name
 the executable it serves (3.2); a document render writes one self-contained file outside the run
 directory (3.2); an estimate's wrong request is `-32602` with the `invalid_arguments` refusal
 carrying the error object (4.5).
+
+From rascal's M10 plan (settled): a replayed step that names an earlier step's output binds to that
+step's replayed output by port, not the recorded identity, and reports the change (4.9); the
+effective allowed directories are the overlap of `--allow-dir` and the configuration (5.2); a bad
+`--allow-dir` exits 64 at start in every tool.
