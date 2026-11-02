@@ -18,9 +18,9 @@ branch by path until v0.4.0 is published, then pin `=0.4.0`.
 
 | contract | squint | rascal |
 |---|---|---|
-| every action carries `kind` (`task`, `operation`, `utility`); optional `group`, listed in the core's `vocabulary.group` (3) | to do | to do |
-| `vocabulary` is a core object; the images profile's four lists live in it as before (3, 11.2) | to do | to do |
-| `export` and `import` are reserved action names, beside `describe` and `estimate` (3, 5) | to do | to do |
+| every action carries `kind` (`task`, `operation`, `utility`); optional `group`, listed in the core's `vocabulary.group` (3) | done (M10) | to do |
+| `vocabulary` is a core object; the images profile's four lists live in it as before (3, 11.2) | done (M10) | to do |
+| `export` and `import` are reserved action names, beside `describe` and `estimate` (3, 5) | done (M10) | to do |
 | `profiles` lists `operations` (with `images`); top-level `artifact_types` with `schema_versions`, `portable` and `preview` (1, 3.3) | n/a (no operations profile in v0.4) | to do |
 | artifact references: type, schema version, tool, identity (never a workspace id), opaque frame, optional `on`, resource; accepted wherever an artifact is taken (3.4, 10.1) | n/a (no operations profile in v0.4) | to do |
 | operations: `kind: "operation"` with `ports` (`in`, `out`), in-ports in the MCP input schema, `images`/`locations` `[]`; every call a run (4.7) | n/a (no operations profile in v0.4) | to do |
@@ -29,12 +29,12 @@ branch by path until v0.4.0 is published, then pin `=0.4.0`.
 | `artifacts {in, out}` in every result, tasks' native outputs included, a `preview` on each out entry whose type has one; images and locations also in `images`/`locations` (4.7, 11.1) | n/a (no operations profile in v0.4) | to do |
 | `<tool>://artifact/{identity}` and `/preview`; a missed read is the `binding` refusal with `port: null` (4.7) | n/a (no operations profile in v0.4) | to do |
 | `export` and `import` tools and `<tool> export --json`/`import --json`: controls, never runs; refusals `binding` or `invalid_arguments`; import idempotent by identity (5.1) | n/a (no operations profile in v0.4) | to do |
-| `invocation` on every result (null only on an unresolved `invalid` run): resolved arguments without locators, `effective`, requirement names (file names only, never paths) (2.3, 4.8) | to do | to do |
-| `<tool> call <action> --arguments <file> [--config] [--allow-dir]…` and `--bundle` replay (4.8, 4.9) | to do | to do |
-| invocation bundle manifest and byte-stable ustar layout (host-built; tools replay it) (4.9) | to do | to do |
-| MCP roots gone: `serve`/`call`/`import --allow-dir <abs>`, narrowed by configuration, none means every path refused, symlinks resolved; never write at a caller path (5, 5.2, 10.1) | to do | to do |
-| `<tool>://session` adds `allowed_dirs` (4.6) | to do | to do |
-| v0.4 fixtures (7, item 7) | to do | to do |
+| `invocation` on every result (null only on an unresolved `invalid` run): resolved arguments without locators, `effective`, requirement names (file names only, never paths) (2.3, 4.8) | done (M10) | to do |
+| `<tool> call <action> --arguments <file> [--config] [--allow-dir]…` and `--bundle` replay (4.8, 4.9) | done (M10) | to do |
+| invocation bundle manifest and byte-stable ustar layout (host-built; tools replay it) (4.9) | done (M10) | to do |
+| MCP roots gone: `serve`/`call`/`import --allow-dir <abs>`, narrowed by configuration, none means every path refused, symlinks resolved; never write at a caller path (5, 5.2, 10.1) | done (M10) | to do |
+| `<tool>://session` adds `allowed_dirs` (4.6) | done (M10) | to do |
+| v0.4 fixtures (7, item 7) | done (M10) | to do |
 
 ## v0.3 (readiness, bound estimates, renders)
 
