@@ -1,0 +1,167 @@
+{
+  "contract": "0.4.0",
+  "tool": {
+    "name": "squint",
+    "version": "0.2.0"
+  },
+  "action": "check",
+  "run": {
+    "id": "decision-1793386884140-53022",
+    "resource": "squint://run/decision-1793386884140-53022/run.json",
+    "session_id": "0b7e3c5a-6f1d-4c2e-9a8b-3d4e5f6a7b8c",
+    "client_run_id": null,
+    "dir": "/abs/squint-out/decision-1793386884140-53022"
+  },
+  "status": "completed",
+  "error": null,
+  "started": "2026-10-30T19:09:42.118Z",
+  "finished": "2026-10-30T19:10:21.904Z",
+  "duration_ms": 39786,
+  "input_identity": "sha256:7777777777777777777777777777777777777777777777777777777777777777",
+  "invocation": {
+    "action": "check",
+    "arguments": {
+      "candidate": {
+        "expect": {
+          "file_sha256": "a1b2000000000000000000000000000000000000000000000000000000000000",
+          "width": 1024,
+          "height": 1024,
+          "projection": "flat",
+          "topology": "bounded"
+        }
+      },
+      "source": {
+        "expect": {
+          "file_sha256": "c3d4000000000000000000000000000000000000000000000000000000000000",
+          "width": 1024,
+          "height": 1024,
+          "projection": "flat",
+          "topology": "bounded"
+        }
+      },
+      "prompt": "a lighthouse at dusk"
+    },
+    "effective": {
+      "model": "claude-sonnet-5-5",
+      "config_identity": "sha256:c0f1000000000000000000000000000000000000000000000000000000000000",
+      "x-squint": {
+        "rules": "2026.10"
+      }
+    },
+    "requirements": [
+      "squint.toml",
+      "ANTHROPIC_API_KEY"
+    ]
+  },
+  "spend": {
+    "usd": 0.0389,
+    "unresolved_usd": 0,
+    "basis": "measured"
+  },
+  "cache": "miss",
+  "verdict": {
+    "value": "fail",
+    "where": [
+      {
+        "image": {
+          "file_sha256": "3f9a000000000000000000000000000000000000000000000000000000000000",
+          "width": 2048,
+          "height": 1024,
+          "projection": "equirectangular",
+          "topology": "wrap"
+        },
+        "kind": "bbox",
+        "parts": [
+          {
+            "bbox": [
+              0.41,
+              0.22,
+              0.47,
+              0.31
+            ]
+          }
+        ],
+        "straddles_wrap": false,
+        "label": "a seagull on the left lamp post",
+        "disposition": "violation",
+        "confidence": "confident",
+        "evidence": "source",
+        "source": {
+          "tool": "squint",
+          "version": "0.2.0",
+          "run": "decision-1793386884140-53022",
+          "item": "F1"
+        }
+      }
+    ]
+  },
+  "images": {
+    "in": [
+      {
+        "slot": "candidate",
+        "role": "candidate",
+        "image": {
+          "file_sha256": "3f9a000000000000000000000000000000000000000000000000000000000000",
+          "width": 2048,
+          "height": 1024,
+          "projection": "equirectangular",
+          "topology": "wrap"
+        }
+      },
+      {
+        "slot": "source",
+        "role": "source",
+        "image": {
+          "file_sha256": "9999999999999999999999999999999999999999999999999999999999999999",
+          "width": 2048,
+          "height": 1024,
+          "projection": "equirectangular",
+          "topology": "wrap"
+        }
+      }
+    ],
+    "out": []
+  },
+  "locations": {
+    "used": [],
+    "found": [
+      {
+        "image": {
+          "file_sha256": "3f9a000000000000000000000000000000000000000000000000000000000000",
+          "width": 2048,
+          "height": 1024,
+          "projection": "equirectangular",
+          "topology": "wrap"
+        },
+        "kind": "bbox",
+        "parts": [
+          {
+            "bbox": [
+              0.41,
+              0.22,
+              0.47,
+              0.31
+            ]
+          }
+        ],
+        "straddles_wrap": false,
+        "label": "a seagull on the left lamp post",
+        "disposition": "violation",
+        "confidence": "confident",
+        "evidence": "source",
+        "source": {
+          "tool": "squint",
+          "version": "0.2.0",
+          "run": "decision-1793386884140-53022",
+          "item": "F1"
+        }
+      }
+    ]
+  },
+  "notes": [
+    "repair: the first submission omitted item C3; repaired in one turn"
+  ],
+  "body": {
+    "verdict": "fail"
+  }
+}

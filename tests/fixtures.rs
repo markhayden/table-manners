@@ -16,7 +16,8 @@
 //! is the result's action and no image in the invocation has a locator (4.8); an out artifact has
 //! a preview exactly when its type declares `preview: true` (4.7); an `image` artifact's identity
 //! is `sha256:` and the `file_sha256` of an image in the result's `images` (3.4, 4.7); and a
-//! reference's own type carries the name of the tool that made it (3.3). The tool generates them from its own code and keeps
+//! reference's own type carries the name of the tool that made it (3.3); and a result carries a
+//! `verdict` only when its action declares `answers: verdict` (2.4). The tool generates them from its own code and keeps
 //! its copy current in its own CI; here they are held to the contract.
 
 use std::collections::BTreeSet;
@@ -25,7 +26,7 @@ use std::path::{Path, PathBuf};
 use sha2::{Digest, Sha256};
 use table_manners::operations::{ArtifactResource, ExportResponse, ImportResponse};
 use table_manners::{
-    CONTRACT_VERSION, Description, Estimate, InvocationBundle, Refusal, RunResult, RunsList,
+    Answers, CONTRACT_VERSION, Description, Estimate, InvocationBundle, Refusal, RunResult, RunsList,
     SCHEMAS, Session,
 };
 
@@ -230,6 +231,18 @@ fn result_rules(path: &Path, r: &RunResult, description: Option<&Description>) {
         no_locator(
             path,
             &serde_json::Value::Object(invocation.arguments.clone()),
+        );
+    }
+    if let (Some(_), Some(d)) = (&r.verdict, description) {
+        let declared = d
+            .actions
+            .iter()
+            .any(|a| a.name == r.action && a.answers == Some(Answers::Verdict));
+        assert!(
+            declared,
+            "{}: a verdict from {}, whose description does not declare answers: verdict",
+            path.display(),
+            r.action
         );
     }
     let Some(artifacts) = &r.artifacts else {
@@ -452,4 +465,23 @@ fn every_tools_fixtures_hold_to_the_contract() {
         }
         assert!(results > 0, "{name}: no run-*.json");
     }
+}
+
+/// The verdict rule refuses a result whose action does not declare `answers: verdict`, and
+/// accepts the same result once it does (2.4). The examples are the schemas' own.
+#[test]
+fn a_verdict_needs_its_action_to_declare_answers() {
+    let examples = Path::new(env!("CARGO_MANIFEST_DIR")).join("examples");
+    let result = examples.join("result/valid/verdict-pass.json");
+    let r: RunResult = serde_json::from_value(read(&result)).expect("a RunResult");
+    let declared: Description = serde_json::from_value(read(
+        &examples.join("description/valid/verdict-and-optional-requirement.json"),
+    ))
+    .expect("a Description");
+    assert_eq!(declared.actions[0].name, r.action, "the examples name one action");
+    result_rules(&result, &r, Some(&declared));
+    let mut undeclared = declared.clone();
+    undeclared.actions[0].answers = None;
+    let refused = std::panic::catch_unwind(|| result_rules(&result, &r, Some(&undeclared)));
+    assert!(refused.is_err(), "a verdict from an undeclared action is refused");
 }

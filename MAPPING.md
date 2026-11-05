@@ -9,6 +9,18 @@ not part of the contract; it is deleted once both conform.
 Wafflehouse, as a client) pin `=0.3.0`. v0.4 is on branch `v0.4`; its work list is first below. The
 v0.1 columns below are kept for review.
 
+## v0.5 (verdicts, optional requirements, labels)
+
+Work for rascal's M13 (its PLAN.md) and squint's `m13-verdict`; Wafflery renders the three as a
+client. Each builds against branch `v0.5` by path, the crate still at `0.4.0`, until the
+coordinated bump publishes `0.5.0`.
+
+| contract | squint | rascal |
+|---|---|---|
+| `answers: verdict` on a judging action; `verdict` (`value`, `where`) on a judged result (2.4) | to do: its five check actions; `where` from findings on the call's own requirements | to do: `remove_prompt` with a checker configured; the selected try's verdict |
+| `optional` and `for` on a requirement; `ready` despite a missing optional one (3.1) | n/a (no optional requirement) | to do: the checker's key, `for: "checking the result"` |
+| `label` on an image out (10.2) | n/a | to do: each try's outs |
+
 ## v0.4 (operations, portable invocations, allowed directories)
 
 Work for each tool's next conformance milestone (rascal's M10 for the operations profile);
