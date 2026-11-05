@@ -17,7 +17,8 @@
 //! a preview exactly when its type declares `preview: true` (4.7); an `image` artifact's identity
 //! is `sha256:` and the `file_sha256` of an image in the result's `images` (3.4, 4.7); and a
 //! reference's own type carries the name of the tool that made it (3.3); and a result carries a
-//! `verdict` only when its action declares `answers: verdict` (2.4). The tool generates them from its own code and keeps
+//! `verdict` only when its action declares `answers: verdict` in one of the tool's descriptions
+//! (2.4). The tool generates them from its own code and keeps
 //! its copy current in its own CI; here they are held to the contract.
 
 use std::collections::BTreeSet;
@@ -385,9 +386,33 @@ fn every_tools_fixtures_hold_to_the_contract() {
         let describe = tool.join("describe.json");
         assert!(describe.exists(), "{name}: no describe.json");
         // The tool's own description first: results are checked against its artifact types.
-        let own: Option<Description> = serde_json::from_value(read(&describe)).ok();
+        let mut own: Option<Description> = serde_json::from_value(read(&describe)).ok();
         if let Some(d) = &own {
             description_rules(&describe, d);
+        }
+        // A tool's description follows its configuration (rascal's `remove_prompt` declares
+        // `answers: verdict` only with a checker configured), so an action declares it when any
+        // of the tool's descriptions does (2.4).
+        if let Some(d) = own.as_mut() {
+            for path in std::fs::read_dir(&tool).expect("tool dir") {
+                let path = path.expect("entry").path();
+                let file = path.file_name().expect("name").to_string_lossy();
+                if !file.starts_with("describe-") {
+                    continue;
+                }
+                let Ok(other) = serde_json::from_value::<Description>(read(&path)) else {
+                    continue;
+                };
+                for judging in other
+                    .actions
+                    .iter()
+                    .filter(|a| a.answers == Some(Answers::Verdict))
+                {
+                    for action in d.actions.iter_mut().filter(|a| a.name == judging.name) {
+                        action.answers = Some(Answers::Verdict);
+                    }
+                }
+            }
         }
         let mut results = 0;
         let mut entries: Vec<PathBuf> = std::fs::read_dir(&tool)

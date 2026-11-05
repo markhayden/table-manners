@@ -12,14 +12,16 @@ v0.1 columns below are kept for review.
 ## v0.5 (verdicts, optional requirements, labels)
 
 Work for rascal's M13 (its PLAN.md) and squint's `m13-verdict`; Wafflery renders the three as a
-client. Each builds against branch `v0.5` by path, the crate still at `0.4.0`, until the
-coordinated bump publishes `0.5.0`.
+client (adopting: `m13-checker` accepts exactly 0.5.0, replacing 0.4.0 with no dual support). The
+crate is at `0.5.0` (rascal PLAN.md 13.15); each tool pins `=0.5.0` by path until it is published,
+then from crates.io.
 
 | contract | squint | rascal |
 |---|---|---|
-| `answers: verdict` on a judging action; `verdict` (`value`, `where`) on a judged result (2.4) | to do: its five check actions; `where` from findings on the call's own requirements | to do: `remove_prompt` with a checker configured; the selected try's verdict |
-| `optional` and `for` on a requirement; `ready` despite a missing optional one (3.1) | n/a (no optional requirement) | to do: the checker's key, `for: "checking the result"` |
-| `label` on an image out (10.2) | n/a | to do: each try's outs |
+| `answers: verdict` on a judging action; `verdict` (`value`, `where`) on a judged result (2.4) | done (`m13-verdict`): `describe*.json` (five check actions with `answers: verdict`), `run-completed.json` (pass), `run-fail.json` (fail, no place), `run-fail-must-not.json` (fail with a place on the call's own must-not requirement) | done (M13): `describe-checker-optional-missing.json`, `run-remove-prompt-checked-pass.json` (pass), `run-remove-prompt-three-tries.json` (`unsure` with its place, the kept try's verdict), `run-remove-prompt-not-checked.json` (no `verdict`; the note says why) |
+| `optional` and `for` on a requirement; `ready` despite a missing optional one (3.1) | n/a (no optional requirement) | done (M13): `describe-checker-optional-missing.json` (the checker's key, `for: "checking the result"`, missing while `remove_prompt` is `ready`) |
+| `label` on an image out (10.2) | n/a | done (M13): `run-remove-prompt-three-tries.json` (each try's outs labelled, the kept try's first) |
+| v0.5 fixtures (7, item 7) | done: `fixtures/squint/` | done: `fixtures/rascal/` |
 
 ## v0.4 (operations, portable invocations, allowed directories)
 
