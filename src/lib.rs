@@ -13,7 +13,7 @@ pub mod images;
 pub mod operations;
 
 /// The contract version this crate describes; every result and description carries it.
-pub const CONTRACT_VERSION: &str = "0.4.0";
+pub const CONTRACT_VERSION: &str = "0.5.0";
 
 /// Every schema as `($id, text)`. References between them use the `$id`s, so a validator needs a
 /// retriever that serves this list and nothing else.
@@ -145,6 +145,9 @@ pub struct RunResult {
     pub spend: Spend,
     /// Whether the paid step came from the cache.
     pub cache: Cache,
+    /// What an action declaring `answers: verdict` judged (2.4); none when it was not judged.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub verdict: Option<Verdict>,
     /// Images profile (11.1): the images taken in and returned.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub images: Option<images::Images>,
@@ -158,6 +161,38 @@ pub struct RunResult {
     pub notes: Vec<String>,
     /// The tool's own.
     pub body: serde_json::Map<String, serde_json::Value>,
+}
+
+/// A judgement on a completed result (2.4).
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct Verdict {
+    /// Pass, fail or unsure.
+    pub value: VerdictValue,
+    /// The places tied to a failed or unsure requirement of the call, in the judged image's
+    /// frame; empty on a pass.
+    #[serde(rename = "where")]
+    pub places: Vec<images::Location>,
+}
+
+/// A verdict's value (2.4).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum VerdictValue {
+    /// Every requirement held.
+    Pass,
+    /// A requirement failed.
+    Fail,
+    /// The judge could not tell.
+    Unsure,
+}
+
+/// What a completed result answers beside its outputs (3).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum Answers {
+    /// A `verdict` (2.4).
+    Verdict,
 }
 
 /// What a call resolved to (4.8), so it can be repeated from another directory, by another client
@@ -363,6 +398,9 @@ pub struct Action {
     pub group: Option<String>,
     /// What it does, in a sentence.
     pub purpose: String,
+    /// What a completed result answers beside its outputs (2.4).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub answers: Option<Answers>,
     /// A JSON Schema for the arguments other than those a profile adds.
     pub params_schema: serde_json::Value,
     /// Images profile (11.2): image slots.
@@ -467,6 +505,12 @@ pub struct Requirement {
     /// A sentence a person can act on.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub setup: Option<String>,
+    /// True when it never blocks the action: it limits an optional part, which `for` names.
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub optional: bool,
+    /// What an optional requirement is needed for, in a few words.
+    #[serde(default, rename = "for", skip_serializing_if = "Option::is_none")]
+    pub needed_for: Option<String>,
 }
 
 /// The kinds of requirement (3.1).

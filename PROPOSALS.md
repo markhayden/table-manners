@@ -274,3 +274,15 @@ From rascal's M10 plan (settled): a replayed step that names an earlier step's o
 step's replayed output by port, not the recorded identity, and reports the change (4.9); the
 effective allowed directories are the overlap of `--allow-dir` and the configuration (5.2); a bad
 `--allow-dir` exits 64 at start in every tool.
+
+## Adopted for v0.5: a verdict, optional requirements and labels (rascal M13, 2026-11-04)
+
+rascal's remove asks a checker whether the object is gone and retries on a fixed ladder (its
+SPEC "Self-correcting remove", ADR 0023). For that to work with any checker, not squint alone,
+the result needs a verdict a tool other than squint can read; a checker's key must not make the
+whole remove look unconfigured; and a run with several tries needs to name each try's images.
+Adopted on branch `v0.5` as 2.4, 3.1 and 10.2; nothing breaking. Reviewed with rascal's spec
+(Codex, 2026-11-04: `docs/reviews/m13-*` in rascal), which asked for the cross-document check
+(a verdict only from an action that declares `answers`) to live in the conformance tests,
+since a schema cannot see both documents.
+

@@ -1,6 +1,14 @@
-# table-manners, v0.4.0 (draft)
+# table-manners, v0.5.0
 
-Status: **v0.4.0 draft, not binding until tagged**, 2026-11-01. v0.3.0 plus the operations
+Status: **v0.5.0, released 2026-11-05** (tag `v0.5.0`, crates.io `table-manners 0.5.0`).
+v0.4.0 plus a verdict on a judged result (2.4), optional requirements (3.1) and a label on an
+image out (10.2) ("Changes from v0.4" below); the 11.1 order of `images.out` (most telling first)
+is stated. Drafted for rascal's M13 (a remove that asks a checker about its result) with squint as
+the first checker. The schemas, types, examples and the crate (`0.5.0`) on branch `v0.5` are
+v0.5.0's, and rascal's and squint's fixtures at 0.5.0 pass conformance here (rascal PLAN.md
+13.15).
+
+v0.4.0, 2026-11-01: v0.3.0 plus the operations
 profile (operations as ordinary actions with typed ports, artifact types and references, the
 `binding` refusal, artifacts in the result, the reserved `export` and `import` tools), the kind and
 group of every action, the effective invocation on every result with one generic command line and
@@ -87,7 +95,7 @@ while the tool may still be running. A **header** the contract owns and a **body
 
 ```jsonc
 {
-  "contract": "0.4.0",
+  "contract": "0.5.0",
   "tool": { "name": "squint", "version": "0.2.0" },
   "action": "check",
   "run": { "id": "decision-1793386884140-53022", "resource": "squint://run/decision-…/run.json",
@@ -172,13 +180,33 @@ asks for a new estimate first.
   output it completed because a later step failed: an agent can salvage a mask and call a
   different filler.
 
+### 2.4 The verdict
+
+An action that judges something (squint's checks; rascal's remove when it asks a checker about
+its result) says so in its description with `"answers": "verdict"` (3), and puts a `verdict` in
+the header of a completed result it judged:
+
+```jsonc
+  "verdict": { "value": "fail", "where": [ …locations (9)… ] }
+```
+
+- `value` is `pass`, `fail` or `unsure`. How the tool reaches it is its own; the body may say
+  more.
+- `where` holds the places tied to a failed or unsure requirement of this call, in the frame of
+  the image it judged, as locations (9). It holds nothing else: a finding about a rule the caller
+  did not ask about is the body's. On a `pass` it is empty; it may be empty on a `fail`.
+- A completed result with no `verdict` was not judged, and its notes or body say why (a check
+  turned off, a checker that could not run). A `verdict` from an action that does not declare
+  `answers` is a conformance failure.
+- A verdict is evidence for the caller, never a status: a `fail` is `completed` (2.1).
+
 ## 3. The description document
 
 `<tool> describe --json` prints it, and the MCP tool `describe` returns it.
 
 ```jsonc
 {
-  "contract": "0.4.0",
+  "contract": "0.5.0",
   "profiles": ["images"],
   "tool": { "name": "squint", "version": "0.2.0", "purpose": "Checks an image against what was asked of it." },
   "actions": [
@@ -223,6 +251,8 @@ asks for a new estimate first.
 - `vocabulary` is a top-level object of word lists. The core owns `group`: required, and listing
   every `group` the actions use, whenever any action has one; absent or empty otherwise. The
   images profile adds its lists (11.2). `vocabulary` is required whenever any list in it is.
+- `answers` is optional: `verdict` when a completed result of the action may carry a verdict
+  (2.4).
 - `params_schema` is a JSON Schema for the action's arguments other than those a profile adds.
   Choices a caller may make (a model, a filler) are arguments in it, with the default the tool
   uses when they are absent; what the tool actually used is in the estimate (4.5) and the run.
@@ -255,9 +285,13 @@ action, what stands between the action and a run:
 }
 ```
 
-- `state` is `ready` (no requirement is `missing` or `invalid`), `needs_setup` (one is, and the
-  person can fix it), or `unavailable` (this build or platform cannot run the action at all; a
-  requirement says why).
+- `state` is `ready` (no requirement is `missing` or `invalid`, optional ones aside),
+  `needs_setup` (one is, and the person can fix it), or `unavailable` (this build or platform
+  cannot run the action at all; a requirement says why).
+- A requirement MAY be `"optional": true` with a `for` naming, in a few words a person reads,
+  the part of the action it serves (`"for": "checking the result"`). A missing or invalid
+  optional requirement never makes the action `needs_setup` and never refuses a call: the action
+  runs without that part and its result says so (2.4). `for` appears only with `optional`.
 - A requirement's `kind` is `config`, `credential`, `env` (a variable the tool reads that is not a
   secret, such as a model directory), `model` (a model or endpoint the action calls, as
   configured), `file` (a local file it needs, such as model weights) or `dependency` (a helper
@@ -513,7 +547,7 @@ exactly the arguments the paid call would send:
 It answers with an estimate (`schemas/core/estimate.json`) as `structuredContent`:
 
 ```jsonc
-{ "contract": "0.4.0", "tool": { "name": "squint", "version": "0.2.0" },
+{ "contract": "0.5.0", "tool": { "name": "squint", "version": "0.2.0" },
   "action": "source_fidelity",
   "binding": "sha256:…",
   "session_id": "0b7e3c5a-…",
@@ -575,7 +609,7 @@ A **session** is one serving process's spend ledger. `<tool>://session`
 (`schemas/core/session.json`) returns one atomic observation of it:
 
 ```jsonc
-{ "contract": "0.4.0", "tool": { "name": "rascal", "version": "0.1.0" },
+{ "contract": "0.5.0", "tool": { "name": "rascal", "version": "0.1.0" },
   "id": "0b7e3c5a-6f1d-4c2e-9a8b-3d4e5f6a7b8c", "started": "2026-10-31T18:02:11.530Z",
   "budget_usd": 2.0, "spent_usd": 0.16, "unresolved_usd": 0.04, "reserved_usd": 0.04,
   "remaining_usd": 1.8,
@@ -699,7 +733,7 @@ data (`schemas/core/refusal.json`):
 
 ```jsonc
 // <tool>://artifact/{identity}
-{ "contract": "0.4.0", "tool": { "name": "rascal", "version": "0.1.0" },
+{ "contract": "0.5.0", "tool": { "name": "rascal", "version": "0.1.0" },
   "artifact": { …reference… },
   "preview": { …image out with role "preview"… },
   "record": { …the tool's own… } }
@@ -774,7 +808,7 @@ In member names an identity's `:` is written `-` (`artifacts/sha256-9c1e….mask
 ```jsonc
 { "bundle_version": 1,
   "steps": [
-    { "contract": "0.4.0", "tool": { "name": "rascal", "version": "0.1.0" },
+    { "contract": "0.5.0", "tool": { "name": "rascal", "version": "0.1.0" },
       "invocation": { …4.8… }, "result": { …the original run.json… },
       "inputs":    [ { "port": "image", "image": { …image reference… }, "member": "inputs/3f9a….png" } ],
       "artifacts": [ { "port": "mask", "artifact": { …reference… },
@@ -860,7 +894,7 @@ on stdout.
 ```jsonc
 // export: in, then out
 { "artifact": { …reference… } }
-{ "contract": "0.4.0", "tool": { "name": "rascal", "version": "0.1.0" },
+{ "contract": "0.5.0", "tool": { "name": "rascal", "version": "0.1.0" },
   "artifact": { …reference… },
   "file": { "path": "/abs/rascal-data/exports/sha256-9c1e….mask.tar", "sha256": "…",
             "bytes": 1832448, "media_type": "application/x-tar" } }
@@ -868,7 +902,7 @@ on stdout.
 // import: in, then out
 { "file": { "path": "/abs/allowed/….mask.tar" }, "sha256": "…" }
 { "inline": { "media_type": "application/json", "data": "<base64>" } }
-{ "contract": "0.4.0", "tool": { "name": "rascal", "version": "0.1.0" },
+{ "contract": "0.5.0", "tool": { "name": "rascal", "version": "0.1.0" },
   "artifact": { …reference… }, "already_present": false }
 ```
 
@@ -983,6 +1017,24 @@ A conforming tool provides, at the contract version it names:
    - `session.json` with `allowed_dirs`, and `invalid`/`input` results for a path outside them,
      a `..` escape, a symlink escape, a missing file (the same refusal as an existing one) and a
      session started with no `--allow-dir` (`allowed_dirs: []`, every path refused).
+   For v0.5 they add the verdict, optional-requirement and label fixtures listed in "Changes from
+   v0.4".
+
+## Changes from v0.4
+
+Added, nothing breaking:
+
+- The verdict: an action's `answers: verdict` and a judged result's `verdict` (`value`, `where`)
+  (2.4, 3).
+- Optional requirements: `optional` and `for`; a missing optional requirement leaves the action
+  `ready` and refuses no call (3.1).
+- An image out's optional `label` (10.2).
+- Stated: `images.out` lists the most telling image first (11.1).
+
+For v0.5 the conformance fixtures add (7): a description whose judging action declares `answers`
+and one with an optional requirement missing while the action is `ready`; a judged result for
+each verdict value, with `where` on a fail; a result not judged (no `verdict`) whose note says
+why; and image outs with labels.
 
 ## Changes from v0.3
 
@@ -1197,7 +1249,12 @@ Every image a tool returns is an **image out**: its reference, its role, and one
 { "role": "mask", "image": { …reference… }, "path": "/abs/run/mask-grey.png" }
 { "role": "mask", "image": { … }, "inline": { "media_type": "image/png", "data": "…" } }
 { "role": "mask", "image": { … }, "resource": "rascal://run/r-8c1e/images/mask-grey.png" }
+{ "role": "result_try_2", "label": "Try 2 · result", "image": { … }, "path": "/abs/run/tries/2/result.png" }
 ```
+
+- `label` is optional: plain words a host shows in place of the role, when several outs share a
+  kind (each try of a retried run). Roles stay the description's words; a label never replaces
+  a role in a binding.
 
 - The caller chooses the locator per call (`return_images: "path" | "inline" | "resource"`).
   Default: `path` on stdio, `resource` on a network transport. MCP image content blocks are sent

@@ -1,0 +1,12 @@
+{
+  "role": "mask",
+  "label": "Try 2 · result",
+  "image": {
+    "file_sha256": "5d2e222222222222222222222222222222222222222222222222222222222222",
+    "width": 2048,
+    "height": 1024,
+    "projection": "equirectangular",
+    "topology": "wrap"
+  },
+  "path": "/abs/run/mask-grey.png"
+}

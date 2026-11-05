@@ -264,6 +264,9 @@ pub struct Inline {
 pub struct ImageOut {
     /// The role, from the tool's description.
     pub role: String,
+    /// Plain words a host shows in place of the role (10.2).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub label: Option<String>,
     /// The image's reference.
     pub image: ImageReference,
     /// Where to get it.
