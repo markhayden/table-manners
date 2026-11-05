@@ -723,7 +723,10 @@ data (`schemas/core/refusal.json`):
   required on every out entry whose type declares `preview: true`, and null otherwise; on in
   entries it MAY be given. A preview never stands for the artifact: a host passes the reference on.
 - An image an operation takes or makes also appears in `images.in` (with the port's name as
-  `slot`) or `images.out`, and every preview in `images.out`. A location it takes or makes also
+  `slot`) or `images.out`, and every preview in `images.out`: the same image at the same place
+  (its reference and its locator). Role and label name and show an image out, so a preview may be
+  listed under a more specific role, such as a retried run's `preview_try_2`, and a host matches
+  a preview to its out by image and locator, never by role. A location it takes or makes also
   appears in `locations.used` or `locations.found` (11.1), so consumers of the images profile keep
   working.
 - The tool's own record of the step (rascal's native envelope) goes in `body`. A host never reads
