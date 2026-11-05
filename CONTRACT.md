@@ -1220,7 +1220,10 @@ Every image a tool returns is an **image out**: its reference, its role, and one
 - Both are REQUIRED in every result of an images tool, empty lists where there is nothing.
 - `images.in` lists each image the run took in as `{ slot, role, image }`: the slot it came
   through, its role and its reference, never its bytes. A `many` slot appears once per image, in
-  the order given. `images.out` lists image outs (10.2).
+  the order given. `images.out` lists image outs (10.2), **most telling first**: the image a
+  person should see first leads (an edit's result before the mask that made it), and a host
+  shows the first by default while offering every one. The description's `outputs.images`
+  (11.2) names the roles in the same order.
   Roles come from the tool's description (`candidate`, `source`, `result`, `mask`, …).
 - `locations.used` are those the run took in; `locations.found` those it produced.
 - Images and locations MAY be present on `error` and `cancelled` (2.3).
