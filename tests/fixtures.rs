@@ -26,8 +26,8 @@ use std::path::{Path, PathBuf};
 use sha2::{Digest, Sha256};
 use table_manners::operations::{ArtifactResource, ExportResponse, ImportResponse};
 use table_manners::{
-    Answers, CONTRACT_VERSION, Description, Estimate, InvocationBundle, Refusal, RunResult, RunsList,
-    SCHEMAS, Session,
+    Answers, CONTRACT_VERSION, Description, Estimate, InvocationBundle, Refusal, RunResult,
+    RunsList, SCHEMAS, Session,
 };
 
 struct Embedded;
@@ -478,10 +478,16 @@ fn a_verdict_needs_its_action_to_declare_answers() {
         &examples.join("description/valid/verdict-and-optional-requirement.json"),
     ))
     .expect("a Description");
-    assert_eq!(declared.actions[0].name, r.action, "the examples name one action");
+    assert_eq!(
+        declared.actions[0].name, r.action,
+        "the examples name one action"
+    );
     result_rules(&result, &r, Some(&declared));
     let mut undeclared = declared.clone();
     undeclared.actions[0].answers = None;
     let refused = std::panic::catch_unwind(|| result_rules(&result, &r, Some(&undeclared)));
-    assert!(refused.is_err(), "a verdict from an undeclared action is refused");
+    assert!(
+        refused.is_err(),
+        "a verdict from an undeclared action is refused"
+    );
 }
