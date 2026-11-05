@@ -1,6 +1,6 @@
-# table-manners, v0.5.0 (draft)
+# table-manners, v0.5.0
 
-Status: **v0.5.0 ready to tag, not binding until tagged**; approved for tagging 2026-11-05.
+Status: **v0.5.0, released 2026-11-05** (tag `v0.5.0`, crates.io `table-manners 0.5.0`).
 v0.4.0 plus a verdict on a judged result (2.4), optional requirements (3.1) and a label on an
 image out (10.2) ("Changes from v0.4" below); the 11.1 order of `images.out` (most telling first)
 is stated. Drafted for rascal's M13 (a remove that asks a checker about its result) with squint as
