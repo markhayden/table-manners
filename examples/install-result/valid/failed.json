@@ -1,0 +1,9 @@
+{
+  "id": "birefnet",
+  "state": "not_installed",
+  "installation": null,
+  "error": {
+    "code": "failed",
+    "message": "birefnet.onnx: sha256 did not match artifacts.toml"
+  }
+}

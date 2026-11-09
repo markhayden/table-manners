@@ -1,0 +1,172 @@
+{
+  "contract": "0.5.0",
+  "profiles": [],
+  "tool": {
+    "name": "cutter",
+    "version": "0.1.0",
+    "purpose": "Masks what a prompt names in a picture."
+  },
+  "actions": [
+    {
+      "name": "mask_prompt",
+      "title": "Mask a prompt",
+      "kind": "task",
+      "purpose": "Masks every instance of what a prompt names.",
+      "params_schema": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string"
+          },
+          "prompt": {
+            "type": "string"
+          },
+          "model": {
+            "type": "string",
+            "enum": [
+              "tiny",
+              "birefnet",
+              "sam3"
+            ],
+            "default": "sam3",
+            "x-requirements": {
+              "tiny": [
+                "segmenter:tiny"
+              ],
+              "birefnet": [
+                "segmenter:birefnet"
+              ],
+              "sam3": [
+                "segmenter:sam3"
+              ]
+            }
+          }
+        },
+        "required": [
+          "path",
+          "prompt"
+        ]
+      },
+      "cost": {
+        "may_spend": false
+      },
+      "readiness": {
+        "state": "needs_setup",
+        "requirements": [
+          {
+            "kind": "file",
+            "name": "segmenter:tiny",
+            "state": "present",
+            "for_choice": {
+              "param": "model",
+              "value": "tiny"
+            },
+            "installable": "tiny",
+            "setup": "Get it in the tool's setup, or run `cutter get tiny`."
+          },
+          {
+            "kind": "file",
+            "name": "segmenter:birefnet",
+            "state": "missing",
+            "for_choice": {
+              "param": "model",
+              "value": "birefnet"
+            },
+            "installable": "birefnet",
+            "setup": "Get it in the tool's setup, or run `cutter get birefnet`."
+          },
+          {
+            "kind": "file",
+            "name": "segmenter:sam3",
+            "state": "missing",
+            "for_choice": {
+              "param": "model",
+              "value": "sam3"
+            },
+            "installable": "sam3",
+            "setup": "Get it in the tool's setup, or run `cutter get sam3`."
+          }
+        ]
+      },
+      "duration": {
+        "typical_s": 1,
+        "max_s": 30
+      },
+      "renders": []
+    }
+  ],
+  "progress_interval_s": 10,
+  "resources": [
+    "cutter://runs",
+    "cutter://run/{id}/run.json",
+    "cutter://run/{id}/journal"
+  ],
+  "installables": [
+    {
+      "id": "tiny",
+      "title": "OWLv2 + SAM 2.1 Tiny",
+      "kind": "model",
+      "download_bytes": 750000000,
+      "installed_bytes": 750000000,
+      "licence": "Apache-2.0",
+      "state": "installed",
+      "requirements": [
+        {
+          "kind": "file",
+          "name": "free disk",
+          "state": "present"
+        }
+      ],
+      "last_outcome": null,
+      "x-cutter": {
+        "lab": {
+          "remove": 0.5
+        }
+      }
+    },
+    {
+      "id": "birefnet",
+      "title": "OWLv2 + BiRefNet",
+      "kind": "model",
+      "download_bytes": 750000000,
+      "installed_bytes": 750000000,
+      "licence": "MIT",
+      "state": "not_installed",
+      "requirements": [
+        {
+          "kind": "file",
+          "name": "free disk",
+          "state": "present"
+        }
+      ],
+      "last_outcome": null,
+      "x-cutter": {
+        "lab": {
+          "remove": 0.5
+        }
+      }
+    },
+    {
+      "id": "sam3",
+      "title": "SAM 3",
+      "kind": "model",
+      "download_bytes": 750000000,
+      "installed_bytes": 750000000,
+      "licence": "SAM License",
+      "state": "not_installed",
+      "requirements": [
+        {
+          "kind": "file",
+          "name": "free disk",
+          "state": "present"
+        }
+      ],
+      "last_outcome": null,
+      "x-cutter": {
+        "lab": {
+          "remove": 0.5
+        }
+      }
+    }
+  ]
+}

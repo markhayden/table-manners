@@ -1,0 +1,9 @@
+{
+  "table-manners/installable": "sam3",
+  "table-manners/run": {
+    "id": "decision-20261109-0001",
+    "resource": "rascal://run/decision-20261109-0001/run.json",
+    "session_id": "0b7e3c5a-6f1d-4c2e-9a8b-3d4e5f6a7b8c",
+    "client_run_id": null
+  }
+}

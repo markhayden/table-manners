@@ -9,6 +9,21 @@ not part of the contract; it is deleted once both conform.
 Wafflehouse, as a client) pin `=0.3.0`. v0.4 is on branch `v0.4`; its work list is first below. The
 v0.1 columns below are kept for review.
 
+## v0.6 (per-choice readiness, installables, install and uninstall)
+
+Work for rascal's M14 (its PLAN.md: a person picks the segmenter and installs the models). squint
+lists no installables and no choice requirements, so it bumps its pin and regenerates its fixtures
+with nothing else to change; Wafflery renders the choice field and the Installables list and calls
+the controls as a client. The crate stays at `0.5.0` until the coordinated bump (rascal PLAN.md
+14.13).
+
+| contract | squint | rascal |
+|---|---|---|
+| `x-requirements`, `for_choice`, `installable`; the truth table (3.1) | n/a | to do (M14 14.11): `remove_prompt`'s `model` |
+| `installables` with `last_outcome` (3.5) | n/a | to do (M14 14.11): one per catalogued segmenter |
+| `install` / `uninstall`, `table-manners/installable` progress, `unknown_installable` (5.3) | n/a | to do (M14 14.11) |
+| v0.6 fixtures (7) | to do: regenerated at 0.6.0 | to do |
+
 ## v0.5 (verdicts, optional requirements, labels)
 
 Work for rascal's M13 (its PLAN.md) and squint's `m13-verdict`; Wafflery renders the three as a

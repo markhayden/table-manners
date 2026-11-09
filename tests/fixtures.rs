@@ -4,7 +4,9 @@
 //! `runs*.json` a runs page, `session.json` and every `session-*.json` a session, every
 //! `refusal-*.json` a refusal's data; for the operations profile every `artifact-*.json` an
 //! artifact resource, every `export-*.json` and `import-*.json` an export or import response, and
-//! each of these three a refusal's data instead when it carries `reason`; every `bundle-*/`
+//! each of these three a refusal's data instead when it carries `reason`; every `install-*.json`
+//! and `uninstall-*.json` an install control's result, or a refusal's data when it carries
+//! `reason` (5.3); every `bundle-*/`
 //! directory an invocation bundle whose `invocation.json` is a manifest and whose every listed
 //! member exists beside it with the digest the manifest states, and nothing else (4.9). Every dollar amount has at most
 //! six decimals (4.6). Any other file fails.
@@ -18,7 +20,12 @@
 //! is `sha256:` and the `file_sha256` of an image in the result's `images` (3.4, 4.7); and a
 //! reference's own type carries the name of the tool that made it (3.3); and a result carries a
 //! `verdict` only when its action declares `answers: verdict` in one of the tool's descriptions
-//! (2.4). The tool generates them from its own code and keeps
+//! (2.4). Per-choice readiness (3.1): a requirement's `for_choice` names a parameter whose `enum`
+//! holds the value and whose `x-requirements[value]` names the requirement, every name listed in
+//! `x-requirements` is a requirement of that choice, such a parameter has a `default` in its
+//! `enum`, and the action's state follows the truth table (only the default's choice requirements
+//! and the plain ones count); installable ids are unique and every requirement's `installable`
+//! is one of them (3.5). The tool generates them from its own code and keeps
 //! its copy current in its own CI; here they are held to the contract.
 
 use std::collections::BTreeSet;
@@ -27,8 +34,8 @@ use std::path::{Path, PathBuf};
 use sha2::{Digest, Sha256};
 use table_manners::operations::{ArtifactResource, ExportResponse, ImportResponse};
 use table_manners::{
-    Answers, CONTRACT_VERSION, Description, Estimate, InvocationBundle, Refusal, RunResult,
-    RunsList, SCHEMAS, Session,
+    Answers, CONTRACT_VERSION, Description, Estimate, InstallResult, InvocationBundle,
+    ReadinessState, Refusal, RequirementState, RunResult, RunsList, SCHEMAS, Session,
 };
 
 struct Embedded;
@@ -143,7 +150,136 @@ fn own_type(path: &Path, artifact_type: &str, tool: &str) {
 }
 
 /// The description's rules no schema can say (3, 3.3, 4.7).
+/// The truth table of 3.1: a requirement blocks when it is missing or invalid and is neither
+/// optional nor a choice other than its parameter's default.
+fn choice_rules(path: &Path, d: &Description) {
+    let ids: Vec<&str> = d
+        .installables
+        .iter()
+        .flatten()
+        .map(|i| i.id.as_str())
+        .collect();
+    for (i, id) in ids.iter().enumerate() {
+        assert!(
+            !ids[..i].contains(id),
+            "{}: installable {id} is listed twice",
+            path.display()
+        );
+    }
+    for a in &d.actions {
+        let props = a.params_schema.get("properties");
+        let mut blocking = false;
+        for r in &a.readiness.requirements {
+            if let Some(installable) = &r.installable {
+                assert!(
+                    ids.contains(&installable.as_str()),
+                    "{}: {}'s requirement {} names installable {installable}, which is not listed",
+                    path.display(),
+                    a.name,
+                    r.name
+                );
+            }
+            let unmet = matches!(
+                r.state,
+                RequirementState::Missing | RequirementState::Invalid
+            );
+            let Some(choice) = &r.for_choice else {
+                blocking |= unmet && !r.optional;
+                continue;
+            };
+            let param = props.and_then(|p| p.get(&choice.param)).unwrap_or_else(|| {
+                panic!(
+                    "{}: {}'s requirement {} is for parameter {}, which params_schema lacks",
+                    path.display(),
+                    a.name,
+                    r.name,
+                    choice.param
+                )
+            });
+            let in_enum = param["enum"]
+                .as_array()
+                .is_some_and(|e| e.iter().any(|v| v == choice.value.as_str()));
+            assert!(
+                in_enum,
+                "{}: {}'s choice {}={} is not in the parameter's enum",
+                path.display(),
+                a.name,
+                choice.param,
+                choice.value
+            );
+            let listed = param["x-requirements"][choice.value.as_str()]
+                .as_array()
+                .is_some_and(|names| names.iter().any(|n| n == r.name.as_str()));
+            assert!(
+                listed,
+                "{}: {}'s requirement {} is not in x-requirements[{}]",
+                path.display(),
+                a.name,
+                r.name,
+                choice.value
+            );
+            blocking |= unmet && param["default"] == choice.value.as_str();
+        }
+        for (name, param) in props.and_then(|p| p.as_object()).into_iter().flatten() {
+            let Some(listed) = param.get("x-requirements") else {
+                continue;
+            };
+            let choices = param["enum"].as_array().unwrap_or_else(|| {
+                panic!(
+                    "{}: {}.{name} has x-requirements but no enum",
+                    path.display(),
+                    a.name
+                )
+            });
+            assert!(
+                choices.contains(&param["default"]),
+                "{}: {}.{name} has x-requirements but no default in its enum",
+                path.display(),
+                a.name
+            );
+            for (value, names) in listed.as_object().expect("x-requirements is an object") {
+                assert!(
+                    choices.iter().any(|c| c == value.as_str()),
+                    "{}: {}.{name}'s x-requirements names {value}, which is not in its enum",
+                    path.display(),
+                    a.name
+                );
+                for n in names.as_array().expect("a list of names") {
+                    let found = a.readiness.requirements.iter().any(|r| {
+                        n.as_str() == Some(r.name.as_str())
+                            && r.for_choice
+                                .as_ref()
+                                .is_some_and(|c| c.param == *name && c.value == *value)
+                    });
+                    assert!(
+                        found,
+                        "{}: {}.{name}={value} needs {n}, which readiness does not list for that choice",
+                        path.display(),
+                        a.name
+                    );
+                }
+            }
+        }
+        match a.readiness.state {
+            ReadinessState::Ready => assert!(
+                !blocking,
+                "{}: {} is ready but its default needs what is missing",
+                path.display(),
+                a.name
+            ),
+            ReadinessState::NeedsSetup => assert!(
+                blocking,
+                "{}: {} needs setup but nothing its default needs is missing",
+                path.display(),
+                a.name
+            ),
+            ReadinessState::Unavailable => {}
+        }
+    }
+}
+
 fn description_rules(path: &Path, d: &Description) {
+    choice_rules(path, d);
     let types: Vec<&str> = d
         .artifact_types
         .iter()
@@ -370,6 +506,7 @@ fn every_tools_fixtures_hold_to_the_contract() {
     let artifact = validator("urn:table-manners:operations:artifact");
     let export = validator("urn:table-manners:operations:export-response");
     let import = validator("urn:table-manners:operations:import-response");
+    let install = validator("urn:table-manners:core:install-result");
     let mut tools: Vec<PathBuf> = std::fs::read_dir(&root)
         .expect("fixtures/")
         .map(|e| e.expect("entry").path())
@@ -477,6 +614,22 @@ fn every_tools_fixtures_hold_to_the_contract() {
                 valid(&import, &path, &doc);
                 let i: ImportResponse = serde_json::from_value(doc).expect("an ImportResponse");
                 assert_eq!(i.tool.name, name, "{}: the tool's own name", path.display());
+            } else if (file.starts_with("install-") || file.starts_with("uninstall-")) && refused {
+                valid(&refusal, &path, &doc);
+                let _: Refusal = serde_json::from_value(doc).expect("a Refusal");
+            } else if file.starts_with("install-") || file.starts_with("uninstall-") {
+                valid(&install, &path, &doc);
+                let r: InstallResult = serde_json::from_value(doc).expect("an InstallResult");
+                let listed = own
+                    .as_ref()
+                    .and_then(|d| d.installables.as_ref())
+                    .is_some_and(|list| list.iter().any(|i| i.id == r.id));
+                assert!(
+                    listed,
+                    "{}: {} is not an installable of {name}'s description",
+                    path.display(),
+                    r.id
+                );
             } else if file == "session.json" || file.starts_with("session-") {
                 valid(&session, &path, &doc);
                 let s: Session = serde_json::from_value(doc).expect("a Session");
@@ -515,4 +668,59 @@ fn a_verdict_needs_its_action_to_declare_answers() {
         refused.is_err(),
         "a verdict from an undeclared action is refused"
     );
+}
+
+/// Every valid description example keeps the rules a schema cannot say, and per-choice readiness
+/// refuses each way a description can get it wrong (3.1, 3.5).
+#[test]
+fn per_choice_readiness_follows_the_truth_table() {
+    let examples = Path::new(env!("CARGO_MANIFEST_DIR")).join("examples/description/valid");
+    for entry in std::fs::read_dir(&examples).expect("examples") {
+        let path = entry.expect("entry").path();
+        let d: Description = serde_json::from_value(read(&path)).expect("a Description");
+        description_rules(&path, &d);
+    }
+    let path = examples.join("choice-default-missing.json");
+    let base: Description = serde_json::from_value(read(&path)).expect("a Description");
+    let refused = |name: &str, change: &dyn Fn(&mut Description)| {
+        let mut d = base.clone();
+        change(&mut d);
+        let outcome = std::panic::catch_unwind(|| description_rules(&path, &d));
+        assert!(outcome.is_err(), "{name}: accepted");
+    };
+    // The default (sam3) is missing, so the action cannot be ready.
+    refused("ready while the default is missing", &|d| {
+        d.actions[0].readiness.state = ReadinessState::Ready;
+    });
+    // With the default installed, a missing other choice does not make it need setup.
+    refused("needs setup while only another choice is missing", &|d| {
+        d.actions[0].params_schema["properties"]["model"]["default"] = "tiny".into();
+    });
+    refused("a choice not in the enum", &|d| {
+        d.actions[0].readiness.requirements[1]
+            .for_choice
+            .as_mut()
+            .expect("a choice")
+            .value = "hqsam".into();
+    });
+    refused("a choice's requirement not in x-requirements", &|d| {
+        d.actions[0].readiness.requirements[1].name = "segmenter:other".into();
+    });
+    refused("x-requirements naming a choice outside the enum", &|d| {
+        d.actions[0].params_schema["properties"]["model"]["x-requirements"]["hqsam"] =
+            serde_json::json!(["segmenter:hqsam"]);
+    });
+    refused("x-requirements with no default", &|d| {
+        let model = d.actions[0].params_schema["properties"]["model"]
+            .as_object_mut()
+            .expect("an object");
+        model.remove("default");
+    });
+    refused("an installable the description does not list", &|d| {
+        d.actions[0].readiness.requirements[0].installable = Some("hqsam".into());
+    });
+    refused("an installable listed twice", &|d| {
+        let again = d.installables.as_ref().expect("installables")[0].clone();
+        d.installables.as_mut().expect("installables").push(again);
+    });
 }

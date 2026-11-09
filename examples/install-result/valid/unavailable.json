@@ -1,0 +1,9 @@
+{
+  "id": "evfsam2",
+  "state": "unavailable",
+  "installation": null,
+  "error": {
+    "code": "unavailable",
+    "message": "Not built for linux-arm64."
+  }
+}

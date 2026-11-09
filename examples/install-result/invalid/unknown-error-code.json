@@ -1,0 +1,9 @@
+{
+  "id": "sam3",
+  "state": "not_installed",
+  "installation": null,
+  "error": {
+    "code": "timeout",
+    "message": "x"
+  }
+}

@@ -1,0 +1,28 @@
+{
+  "id": "sam3",
+  "title": "SAM 3",
+  "kind": "model",
+  "download_bytes": 3400000000,
+  "installed_bytes": 3400000000,
+  "licence": "SAM License",
+  "state": "installed",
+  "requirements": [
+    {
+      "kind": "file",
+      "name": "free disk 4 GB",
+      "state": "present"
+    }
+  ],
+  "last_outcome": {
+    "action": "install",
+    "state": "succeeded",
+    "error": null,
+    "at": "2026-11-09T18:02:11Z"
+  },
+  "x-rascal": {
+    "lab": {
+      "round": "segment-01",
+      "remove": 0.777
+    }
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "reason": "unknown_installable",
+  "run": null,
+  "requirements": [
+    {
+      "kind": "file",
+      "name": "x",
+      "state": "missing"
+    }
+  ]
+}
