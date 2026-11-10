@@ -10,7 +10,7 @@ A **core** covers every tool: results, self-description, long runs, the MCP serv
 **Profiles** add what a kind of tool needs: **images**, which squint and rascal implement, and,
 from v0.4, **operations**, which rascal implements.
 
-- [`CONTRACT.md`](CONTRACT.md): the specification: v0.6.0 on branch `v0.6` (per-choice readiness, installables, `install` and `uninstall`), ready to tag; v0.5.0 is the latest tag.
+- [`CONTRACT.md`](CONTRACT.md): the specification: v0.6.0, the latest tag (per-choice readiness, installables, `install` and `uninstall`).
 - [`schemas/`](schemas): the JSON Schemas, the source of truth: `core/` for every tool, `images/`
   for the images profile, `operations/` for the operations profile.
 - [`examples/`](examples): valid and invalid documents for each schema.

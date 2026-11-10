@@ -1,6 +1,6 @@
-# table-manners, v0.6.0 (draft)
+# table-manners, v0.6.0
 
-Status: **v0.6.0 ready to tag, not binding until tagged**: v0.5.0 plus per-choice readiness
+Status: **v0.6.0, released 2026-11-10** (tag `v0.6.0`, crates.io `table-manners 0.6.0`): v0.5.0 plus per-choice readiness
 (3.1), installables (3.5) and the reserved `install` and `uninstall` controls (5.3) ("Changes
 from v0.5" below). Drafted for rascal's M14 (a person picks the segmenter and installs the models
 it needs). The schemas, types, examples and the crate (`0.6.0`) on branch `v0.6` are v0.6.0's,
