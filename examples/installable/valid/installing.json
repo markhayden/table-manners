@@ -1,0 +1,18 @@
+{
+  "id": "hqsam",
+  "title": "OWLv2 + HQ-SAM ViT-L",
+  "kind": "model",
+  "download_bytes": 1900000000,
+  "installed_bytes": 1900000000,
+  "licence": "Apache-2.0",
+  "state": "installing",
+  "progress": 0.42,
+  "requirements": [
+    {
+      "kind": "file",
+      "name": "free disk 4 GB",
+      "state": "present"
+    }
+  ],
+  "last_outcome": null
+}

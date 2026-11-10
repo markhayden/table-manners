@@ -16,7 +16,8 @@ use table_manners::operations::{
     ImportRequest, ImportResponse, Port,
 };
 use table_manners::{
-    Description, Estimate, InvocationBundle, Refusal, RunRef, RunResult, RunsList, SCHEMAS, Session,
+    Description, Estimate, InstallRequest, InstallResult, Installable, InvocationBundle,
+    ProgressMeta, Refusal, RunRef, RunResult, RunsList, SCHEMAS, Session,
 };
 
 fn root() -> PathBuf {
@@ -176,6 +177,26 @@ fn invocation_bundle() {
 }
 
 #[test]
+fn installable() {
+    check::<Installable>("installable");
+}
+
+#[test]
+fn install_request() {
+    check::<InstallRequest>("install-request");
+}
+
+#[test]
+fn install_result() {
+    check::<InstallResult>("install-result");
+}
+
+#[test]
+fn progress_meta() {
+    check::<ProgressMeta>("progress-meta");
+}
+
+#[test]
 fn artifact_type() {
     check::<ArtifactType>("artifact-type");
 }
@@ -288,9 +309,13 @@ fn every_example_directory_has_a_test() {
             "image-reference",
             "import-request",
             "import-response",
+            "install-request",
+            "install-result",
+            "installable",
             "invocation-bundle",
             "location",
             "port",
+            "progress-meta",
             "refusal",
             "result",
             "run-ref",

@@ -1,0 +1,22 @@
+{
+  "id": "sam3",
+  "title": "SAM 3",
+  "kind": "model",
+  "download_bytes": 3400000000,
+  "installed_bytes": 3400000000,
+  "licence": "SAM License",
+  "state": "not_installed",
+  "requirements": [
+    {
+      "kind": "file",
+      "name": "free disk 4 GB",
+      "state": "present"
+    }
+  ],
+  "last_outcome": {
+    "action": "uninstall",
+    "state": "succeeded",
+    "error": null,
+    "at": "2026-11-09T18:09:00Z"
+  }
+}

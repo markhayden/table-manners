@@ -13,7 +13,7 @@ pub mod images;
 pub mod operations;
 
 /// The contract version this crate describes; every result and description carries it.
-pub const CONTRACT_VERSION: &str = "0.5.0";
+pub const CONTRACT_VERSION: &str = "0.6.0";
 
 /// Every schema as `($id, text)`. References between them use the `$id`s, so a validator needs a
 /// retriever that serves this list and nothing else.
@@ -65,6 +65,22 @@ pub const SCHEMAS: &[(&str, &str)] = &[
     (
         "urn:table-manners:core:invocation-bundle",
         include_str!("../schemas/core/invocation-bundle.json"),
+    ),
+    (
+        "urn:table-manners:core:installable",
+        include_str!("../schemas/core/installable.json"),
+    ),
+    (
+        "urn:table-manners:core:install-request",
+        include_str!("../schemas/core/install-request.json"),
+    ),
+    (
+        "urn:table-manners:core:install-result",
+        include_str!("../schemas/core/install-result.json"),
+    ),
+    (
+        "urn:table-manners:core:progress-meta",
+        include_str!("../schemas/core/progress-meta.json"),
     ),
     (
         "urn:table-manners:operations:artifact-type",
@@ -366,6 +382,10 @@ pub struct Description {
     pub progress_interval_s: u32,
     /// Resource URI templates.
     pub resources: Vec<String>,
+    /// What the tool can install on request (3.5); a tool with any serves `install` and
+    /// `uninstall` (5.3).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub installables: Option<Vec<Installable>>,
     /// `x-<tool>` keys: the tool's own.
     #[serde(flatten)]
     pub extensions: BTreeMap<String, serde_json::Value>,
@@ -511,6 +531,182 @@ pub struct Requirement {
     /// What an optional requirement is needed for, in a few words.
     #[serde(default, rename = "for", skip_serializing_if = "Option::is_none")]
     pub needed_for: Option<String>,
+    /// The parameter choice it belongs to: only a call picking it needs it, and only the
+    /// parameter's default counts toward the action's state (3.1).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub for_choice: Option<ForChoice>,
+    /// The installable whose install meets it (3.5).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub installable: Option<String>,
+}
+
+/// A parameter choice a requirement belongs to (3.1): `params_schema.properties[param]` is an
+/// `enum` holding `value`, whose `x-requirements[value]` names the requirement.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct ForChoice {
+    /// The parameter's name.
+    pub param: String,
+    /// The choice.
+    pub value: String,
+}
+
+/// Something a tool can install on request (3.5), such as a model. Its state is read from disk.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct Installable {
+    /// Its id, the `install` request's `id`.
+    pub id: String,
+    /// A short title.
+    pub title: String,
+    /// What it is.
+    pub kind: InstallableKind,
+    /// Bytes downloaded to install it.
+    pub download_bytes: u64,
+    /// Bytes on disk once installed.
+    pub installed_bytes: u64,
+    /// The licence its files are under, as their maker states it.
+    pub licence: String,
+    /// Whether it is installed.
+    pub state: InstallableState,
+    /// The share done, only while installing.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub progress: Option<f64>,
+    /// What installing needs; never what running needs.
+    pub requirements: Vec<Requirement>,
+    /// A line a person reads (required when unavailable: why).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub notes: Option<String>,
+    /// The most recent install or uninstall that finished, until the next one starts.
+    pub last_outcome: Option<InstallOutcome>,
+    /// `x-<tool>` keys: the tool's own.
+    #[serde(flatten)]
+    pub extensions: BTreeMap<String, serde_json::Value>,
+}
+
+/// The kinds of installable (3.5).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum InstallableKind {
+    /// A model the tool runs.
+    Model,
+}
+
+/// An installable's state (3.5).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum InstallableState {
+    /// Installed and verified.
+    Installed,
+    /// Not on this machine.
+    NotInstalled,
+    /// An install is under way.
+    Installing,
+    /// This build or platform cannot install or run it; `notes` says why.
+    Unavailable,
+}
+
+/// How the most recent install or uninstall ended (3.5).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct InstallOutcome {
+    /// Which control it was.
+    pub action: InstallAction,
+    /// How it ended.
+    pub state: OutcomeState,
+    /// Why it failed; none unless `failed`.
+    pub error: Option<InstallError>,
+    /// When it ended, RFC 3339 UTC.
+    pub at: String,
+}
+
+/// The two installation controls (5.3).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum InstallAction {
+    /// `install`.
+    Install,
+    /// `uninstall`.
+    Uninstall,
+}
+
+/// How an install or uninstall ended.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum OutcomeState {
+    /// It did what was asked.
+    Succeeded,
+    /// It stopped on an error.
+    Failed,
+    /// It was cancelled.
+    Cancelled,
+}
+
+/// Why an install or uninstall did not succeed (5.3). Never a credential value.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct InstallError {
+    /// What kind of failure.
+    pub code: InstallErrorCode,
+    /// For a person.
+    pub message: String,
+}
+
+/// The install controls' error codes (5.3).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum InstallErrorCode {
+    /// This build or platform cannot install it.
+    Unavailable,
+    /// Another install or uninstall holds it, or a run holds what would be removed.
+    Busy,
+    /// It failed (a download, a digest, a disk).
+    Failed,
+    /// It was cancelled.
+    Cancelled,
+}
+
+/// The input of the reserved `install` and `uninstall` tools (5.3).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct InstallRequest {
+    /// The installable.
+    pub id: String,
+}
+
+/// What `install` and `uninstall` return (5.3): the installable's state after the call. Never a
+/// run.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct InstallResult {
+    /// The installable.
+    pub id: String,
+    /// Its state after the call; never `installing`.
+    pub state: InstallableState,
+    /// The tool's identity of what is installed, when installed.
+    pub installation: Option<String>,
+    /// Why the call did not do what was asked.
+    pub error: Option<InstallError>,
+}
+
+/// The contract's keys in a progress notification's `_meta` (4.1, 5.3): a run's reference, or the
+/// installable an install or uninstall is working on; never both.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct ProgressMeta {
+    /// The run, once allocated (4.1).
+    #[serde(
+        default,
+        rename = "table-manners/run",
+        skip_serializing_if = "Option::is_none"
+    )]
+    pub run: Option<RunRef>,
+    /// The installable being installed or uninstalled (5.3); no run is involved.
+    #[serde(
+        default,
+        rename = "table-manners/installable",
+        skip_serializing_if = "Option::is_none"
+    )]
+    pub installable: Option<String>,
 }
 
 /// The kinds of requirement (3.1).
@@ -693,6 +889,8 @@ pub enum RefusalReason {
     InvalidArguments,
     /// An operation's artifacts did not bind, or a read named an identity not held (4.7).
     Binding,
+    /// `install` or `uninstall` named an id the description does not list (5.3).
+    UnknownInstallable,
 }
 
 /// What the reserved `estimate` tool returns (4.5): the worst case of one exact call, bound to

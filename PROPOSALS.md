@@ -286,3 +286,16 @@ Adopted on branch `v0.5` as 2.4, 3.1 and 10.2; nothing breaking. Reviewed with r
 (a verdict only from an action that declares `answers`) to live in the conformance tests,
 since a schema cannot see both documents.
 
+## Adopted for v0.6: per-choice readiness and installables (rascal M14, 2026-11-09)
+
+rascal's segmenter becomes a choice (Tiny, SAM 3, BiRefNet, HQ-SAM, EVF-SAM2), and the models are
+a setup step the person takes. A host has to know, without running anything, which choices are
+ready and how to get the rest, and to install them with progress it can cancel. Adopted on branch
+`v0.6` as 3.1 (per-choice readiness: a missing non-default choice never makes the action
+`needs_setup`, but a call that picks it is refused), 3.5 (installables, their state read from
+disk, `last_outcome` for a host that reconnects) and 5.3 (`install` and `uninstall`, controls
+owned by the tool and not the request). Nothing breaking. Reviewed with rascal's spec (Codex, nine
+rounds on 2026-11-09: `docs/reviews/m14-*` in rascal), which asked that the cross-field rules
+(a choice's requirement listed under its `x-requirements`, the default's counting) live in the
+conformance tests, since a schema cannot compare a parameter's `default` with a requirement.
+

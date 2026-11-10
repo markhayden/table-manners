@@ -1,0 +1,12 @@
+{
+  "reason": "not_ready",
+  "run": null,
+  "requirements": [
+    {
+      "kind": "file",
+      "name": "free disk 4 GB",
+      "state": "missing",
+      "setup": "Free 4 GB in the models directory, then try again."
+    }
+  ]
+}

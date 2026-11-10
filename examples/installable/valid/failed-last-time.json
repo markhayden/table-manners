@@ -1,0 +1,25 @@
+{
+  "id": "birefnet",
+  "title": "OWLv2 + BiRefNet",
+  "kind": "model",
+  "download_bytes": 3400000000,
+  "installed_bytes": 3400000000,
+  "licence": "MIT",
+  "state": "not_installed",
+  "requirements": [
+    {
+      "kind": "file",
+      "name": "free disk 4 GB",
+      "state": "present"
+    }
+  ],
+  "last_outcome": {
+    "action": "install",
+    "state": "failed",
+    "error": {
+      "code": "failed",
+      "message": "birefnet.onnx: sha256 did not match artifacts.toml"
+    },
+    "at": "2026-11-09T18:05:00Z"
+  }
+}

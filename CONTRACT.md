@@ -1,6 +1,12 @@
-# table-manners, v0.5.0
+# table-manners, v0.6.0
 
-Status: **v0.5.0, released 2026-11-05** (tag `v0.5.0`, crates.io `table-manners 0.5.0`).
+Status: **v0.6.0, released 2026-11-10** (tag `v0.6.0`, crates.io `table-manners 0.6.0`): v0.5.0 plus per-choice readiness
+(3.1), installables (3.5) and the reserved `install` and `uninstall` controls (5.3) ("Changes
+from v0.5" below). Drafted for rascal's M14 (a person picks the segmenter and installs the models
+it needs). The schemas, types, examples and the crate (`0.6.0`) on branch `v0.6` are v0.6.0's,
+and rascal's and squint's fixtures at 0.6.0 pass conformance here (rascal PLAN.md 14.13).
+
+v0.5.0, released 2026-11-05 (tag `v0.5.0`, crates.io `table-manners 0.5.0`).
 v0.4.0 plus a verdict on a judged result (2.4), optional requirements (3.1) and a label on an
 image out (10.2) ("Changes from v0.4" below); the 11.1 order of `images.out` (most telling first)
 is stated. Drafted for rascal's M13 (a remove that asks a checker about its result) with squint as
@@ -95,7 +101,7 @@ while the tool may still be running. A **header** the contract owns and a **body
 
 ```jsonc
 {
-  "contract": "0.5.0",
+  "contract": "0.6.0",
   "tool": { "name": "squint", "version": "0.2.0" },
   "action": "check",
   "run": { "id": "decision-1793386884140-53022", "resource": "squint://run/decision-…/run.json",
@@ -206,7 +212,7 @@ the header of a completed result it judged:
 
 ```jsonc
 {
-  "contract": "0.5.0",
+  "contract": "0.6.0",
   "profiles": ["images"],
   "tool": { "name": "squint", "version": "0.2.0", "purpose": "Checks an image against what was asked of it." },
   "actions": [
@@ -229,6 +235,7 @@ the header of a completed result it judged:
   "progress_interval_s": 10,
   "resources": [ "squint://runs{?cursor}", "squint://run/{id}/run.json", "squint://run/{id}/journal",
                  "squint://session" ],
+  "installables": [ …(3.5)… ],                // OPTIONAL: what the tool installs on request
   "vocabulary": { …(below)… },
   "x-squint": { }
   // the images profile adds "limits" (11.2)
@@ -261,7 +268,9 @@ the header of a completed result it judged:
 - `duration` lets a client set its timeout up front, and `progress_interval_s` (at most 10) is the
   longest gap between progress notifications on a live run (4.1).
 - Action names are lowercase with underscores (`check`, `seam_heal`); `describe`, `estimate`,
-  `export` and `import` are reserved (5) and never appear in `actions`.
+  `export`, `import`, `install` and `uninstall` are reserved (5) and never appear in `actions`.
+- `installables` lists what the tool can install on request (3.5); a tool with any serves the
+  reserved `install` and `uninstall` tools (5.3).
 - `renders` show a run to a person (3.2).
 - `describe` works with no configuration, no credentials and no network (3.1), and is cheap: a
   host calls it again to refresh readiness.
@@ -324,6 +333,45 @@ action, what stands between the action and a run:
   ever carries a credential value, and a tool MUST NOT print one.
 - A credential a call needs and does not have is not a provider call: the call is refused
   `not_ready` before any run.
+
+**Readiness per choice.** A choice a caller makes in `params_schema` (a model, say) may need
+something the other choices do not. Such a parameter is a string `enum` with a `default`, and
+carries `x-requirements`: an object from each choice to the names of the requirements that choice
+needs. Readiness lists each of those requirements once, with `for_choice` naming the choice, and
+with `installable` (3.5) when installing something meets it:
+
+```jsonc
+"params_schema": { "type": "object", "properties": {
+  "model": { "type": "string", "enum": ["tiny", "birefnet", "sam3"], "default": "sam3",
+             "x-requirements": { "tiny": ["segmenter:tiny"], "birefnet": ["segmenter:birefnet"],
+                                 "sam3": ["segmenter:sam3"] } } } },
+"readiness": { "state": "needs_setup", "requirements": [
+  { "kind": "file", "name": "segmenter:tiny", "state": "present",
+    "for_choice": { "param": "model", "value": "tiny" }, "installable": "tiny" },
+  { "kind": "file", "name": "segmenter:sam3", "state": "missing",
+    "for_choice": { "param": "model", "value": "sam3" }, "installable": "sam3",
+    "setup": "Get SAM 3 in the tool's setup, or run `rascal tools get sam3`." } ] }
+```
+
+- **The truth table.** The action's `state` describes a call that takes the default:
+
+  | requirement | counts toward `state` |
+  |---|---|
+  | no `for_choice`, not `optional` | yes |
+  | `optional` | never (above) |
+  | `for_choice` of the parameter's `default` | yes |
+  | `for_choice` of another choice | never |
+
+  `ready` when nothing that counts is `missing` or `invalid`; `needs_setup` when something is.
+- A call, and an estimate (4.5), is judged by the choices it names (the default for a parameter
+  it leaves out): a call naming a choice whose requirements are met runs even when the action is
+  `needs_setup` because of its default; a call naming a choice with a `missing` or `invalid`
+  requirement is refused `not_ready`, naming those requirements.
+- A choice's requirement is never `optional`: it is needed exactly when its choice is picked.
+- Every name in `x-requirements` is a requirement listed with that choice, every `for_choice` names
+  a parameter whose `enum` holds the value and whose `x-requirements` names the requirement, and the
+  `default` is in the `enum`. A choice this build or platform cannot run is left out of the `enum`.
+  The conformance tests check these, which a schema cannot (7).
 
 ### 3.2 Renders
 
@@ -407,6 +455,42 @@ references, never a tool's ids, and passes them back.
   A host uses it, with `type`, to offer only candidates made on the same file; it never checks
   frames itself.
 - `resource` reads the artifact (4.7).
+
+### 3.5 Installables
+
+Some of what an action needs a tool can fetch on request: a model, say. The description lists
+these as `installables` (`schemas/core/installable.json`), and a host offers to install them:
+
+```jsonc
+"installables": [
+  { "id": "sam3", "title": "SAM 3", "kind": "model",
+    "download_bytes": 3400000000, "installed_bytes": 3400000000, "licence": "SAM License",
+    "state": "installing", "progress": 0.42,
+    "requirements": [ { "kind": "file", "name": "free disk 4 GB", "state": "present" } ],
+    "notes": "Meta's SAM License ships with it.",
+    "last_outcome": { "action": "install", "state": "failed",
+                      "error": { "code": "failed", "message": "sam3.vision.onnx.data: sha256 did not match" },
+                      "at": "2026-11-09T18:05:00Z" },
+    "x-rascal": { "lab": { "round": "segment-01", "remove": 0.777 } } } ]
+```
+
+- `id` is a lowercase word (`[a-z0-9][a-z0-9_.-]*`), unique in the description; it is what
+  `install` takes and what a requirement's `installable` names.
+- `kind` is `model`, the only kind v0.6 defines.
+- `download_bytes` is what installing downloads; `installed_bytes` what it takes on disk.
+- `licence` is the licence its files are under, as their maker states it. A host shows it before
+  installing.
+- `state` is `installed`, `not_installed`, `installing` or `unavailable` (this build or platform
+  cannot install or run it; `notes` then says why). `progress`, from 0 to 1, appears only while
+  `installing`.
+- `requirements` (3.1) are what installing needs (free disk, a credential), never what running
+  needs: those are the actions' own. An unmet one refuses `install` with `not_ready` (5.3).
+- `last_outcome` is `null`, or how the most recent `install` or `uninstall` that finished ended
+  (`action`, `state` `succeeded`, `failed` or `cancelled`, `error` on a failure only, `at`), until
+  the next one starts. A host that lost its connection during an install reads the outcome here.
+- `x-<tool>` keys are the tool's own.
+- The state is read from disk (what is installed, a lock, a status file the tool writes while it
+  installs): describing stays a local inspection (3.1) and never touches the network.
 
 ## 4. Long runs
 
@@ -547,7 +631,7 @@ exactly the arguments the paid call would send:
 It answers with an estimate (`schemas/core/estimate.json`) as `structuredContent`:
 
 ```jsonc
-{ "contract": "0.5.0", "tool": { "name": "squint", "version": "0.2.0" },
+{ "contract": "0.6.0", "tool": { "name": "squint", "version": "0.2.0" },
   "action": "source_fidelity",
   "binding": "sha256:…",
   "session_id": "0b7e3c5a-…",
@@ -609,7 +693,7 @@ A **session** is one serving process's spend ledger. `<tool>://session`
 (`schemas/core/session.json`) returns one atomic observation of it:
 
 ```jsonc
-{ "contract": "0.5.0", "tool": { "name": "rascal", "version": "0.1.0" },
+{ "contract": "0.6.0", "tool": { "name": "rascal", "version": "0.1.0" },
   "id": "0b7e3c5a-6f1d-4c2e-9a8b-3d4e5f6a7b8c", "started": "2026-10-31T18:02:11.530Z",
   "budget_usd": 2.0, "spent_usd": 0.16, "unresolved_usd": 0.04, "reserved_usd": 0.04,
   "remaining_usd": 1.8,
@@ -736,7 +820,7 @@ data (`schemas/core/refusal.json`):
 
 ```jsonc
 // <tool>://artifact/{identity}
-{ "contract": "0.5.0", "tool": { "name": "rascal", "version": "0.1.0" },
+{ "contract": "0.6.0", "tool": { "name": "rascal", "version": "0.1.0" },
   "artifact": { …reference… },
   "preview": { …image out with role "preview"… },
   "record": { …the tool's own… } }
@@ -811,7 +895,7 @@ In member names an identity's `:` is written `-` (`artifacts/sha256-9c1e….mask
 ```jsonc
 { "bundle_version": 1,
   "steps": [
-    { "contract": "0.5.0", "tool": { "name": "rascal", "version": "0.1.0" },
+    { "contract": "0.6.0", "tool": { "name": "rascal", "version": "0.1.0" },
       "invocation": { …4.8… }, "result": { …the original run.json… },
       "inputs":    [ { "port": "image", "image": { …image reference… }, "member": "inputs/3f9a….png" } ],
       "artifacts": [ { "port": "mask", "artifact": { …reference… },
@@ -860,6 +944,7 @@ Lifted from `rascal serve` (rascal ADR 0015).
   may spend (4.5), plus `export` and `import` when any artifact type is portable (5.1); each
   action tool's input schema is its action's `params_schema` with the arguments its profiles add
   (for an operation, its in-ports, 4.7). `estimate`'s input is `{action, arguments}` (4.5).
+  A tool that lists `installables` also serves `install` and `uninstall` (5.3).
 - `<tool> serve` accepts `--config <path>` (4.6) and, like `describe`, starts without a
   configuration: its actions then report `needs_setup`, and a call that needs what is missing is
   refused `not_ready` (3.1).
@@ -878,7 +963,8 @@ Lifted from `rascal serve` (rascal ADR 0015).
   `client_run_id` (4.4).
 - The contract's request and notification metadata lives in MCP's `_meta` under keys prefixed
   `table-manners/` (`table-manners/run`, `table-manners/client_run_id`,
-  `table-manners/estimate`), so it needs no MCP revision of its own.
+  `table-manners/estimate`, `table-manners/installable`), so it needs no MCP revision of its own
+  (`schemas/core/progress-meta.json` describes the progress keys).
 - Rust tools SHOULD use the official SDK, `rmcp`, pinned exactly; rascal and squint pin `=3.8.0`.
   A tool in another language uses its official SDK at the same revision.
 - Every tool's test suite drives its server with an independently written client that shares no
@@ -897,7 +983,7 @@ on stdout.
 ```jsonc
 // export: in, then out
 { "artifact": { …reference… } }
-{ "contract": "0.5.0", "tool": { "name": "rascal", "version": "0.1.0" },
+{ "contract": "0.6.0", "tool": { "name": "rascal", "version": "0.1.0" },
   "artifact": { …reference… },
   "file": { "path": "/abs/rascal-data/exports/sha256-9c1e….mask.tar", "sha256": "…",
             "bytes": 1832448, "media_type": "application/x-tar" } }
@@ -905,7 +991,7 @@ on stdout.
 // import: in, then out
 { "file": { "path": "/abs/allowed/….mask.tar" }, "sha256": "…" }
 { "inline": { "media_type": "application/json", "data": "<base64>" } }
-{ "contract": "0.5.0", "tool": { "name": "rascal", "version": "0.1.0" },
+{ "contract": "0.6.0", "tool": { "name": "rascal", "version": "0.1.0" },
   "artifact": { …reference… }, "already_present": false }
 ```
 
@@ -950,6 +1036,42 @@ A caller path is accepted only on a local transport (stdio), and only when its c
   document renders, exports) is at a path it chooses and returns.
 - Over any network transport every path is refused (10.1).
 - MCP roots are not used. A host that offered roots passes `--allow-dir` instead.
+
+### 5.3 Install and uninstall
+
+A tool that lists `installables` (3.5) serves the reserved MCP tools `install` and `uninstall`.
+Both take `{ "id": "<installable>" }` (`schemas/core/install-request.json`) and return the
+installable's state after the call (`schemas/core/install-result.json`):
+
+```jsonc
+{ "id": "sam3", "state": "installed", "installation": "sha256:4f0c…", "error": null }
+{ "id": "sam3", "state": "installed", "installation": "sha256:4f0c…",
+  "error": { "code": "cancelled", "message": "Cancelled; the previous installation is unchanged." } }
+```
+
+- They are controls, not actions: no run, no workspace, no spend, no `max_spend_usd`, no
+  `client_run_id`, and no `invocation`.
+- `state` is `installed`, `not_installed` or `unavailable`, never `installing`: the call returns
+  when the work ends. `installation` is the tool's identity of what is installed (rascal: the
+  digest of its install record), null unless `installed`. `error` is null when the call did what
+  was asked; otherwise its `code` is `unavailable` (the build or platform cannot install it),
+  `busy` (another install or uninstall holds it, or a run holds what would be removed), `failed`
+  (a download, a digest, the disk; `message` says which, never with a credential) or `cancelled`.
+  A failed or cancelled install leaves what was installed before, and the result says so in its
+  `state` and `installation`.
+- An install belongs to the tool, not to the request. Progress goes out as
+  `notifications/progress` on the request's progress token, as in 4.1 (increasing `progress`, a
+  one-line `message`), with `_meta["table-manners/installable"]` the id and no run reference.
+  MCP cancellation of the request cancels the install. If the client goes away, the install goes
+  on, and `describe` shows it `installing` and then its `last_outcome`. A second `install` of an
+  id already installing attaches to it: progress from then on, and the same result.
+- `uninstall` of an id that is installing cancels the install; of one installed, removes it; of
+  one not installed, returns `not_installed` with no error.
+- Refused before any work, as JSON-RPC `-32602` with `data` (`schemas/core/refusal.json`):
+  `unknown_installable` for an id the description does not list, and `not_ready` naming the
+  installable's unmet requirements (free disk, a credential). A request refused so does nothing.
+- The credentials an install needs are its requirements, passed by the host like any other
+  (4.6): a host that changes one restarts the session.
 
 ## 6. Exit codes
 
@@ -1021,7 +1143,29 @@ A conforming tool provides, at the contract version it names:
      a `..` escape, a symlink escape, a missing file (the same refusal as an existing one) and a
      session started with no `--allow-dir` (`allowed_dirs: []`, every path refused).
    For v0.5 they add the verdict, optional-requirement and label fixtures listed in "Changes from
-   v0.4".
+   v0.4". For v0.6 they add the per-choice and installable fixtures listed in "Changes from v0.5".
+8. For v0.6, a tool that lists `installables`: `install` and `uninstall` (5.3) with progress,
+   cancellation, attach and a disconnected install's `last_outcome`; per-choice readiness held to
+   the truth table (3.1).
+
+## Changes from v0.5
+
+Added, nothing breaking:
+
+- Per-choice readiness: `x-requirements` on an `enum` parameter, `for_choice` and `installable` on
+  a requirement, and the truth table: only the default's choice requirements count toward an
+  action's state, and a call is judged by the choices it names (3.1).
+- Installables in the description (`schemas/core/installable.json`) with `last_outcome` (3.5).
+- The reserved `install` and `uninstall` controls (`schemas/core/install-request.json`,
+  `install-result.json`), progress with `_meta["table-manners/installable"]`
+  (`schemas/core/progress-meta.json`), and the `unknown_installable` refusal (5.3).
+- `install` and `uninstall` join the reserved names (3, 5).
+
+For v0.6 the conformance fixtures add (7): a description with a choice parameter whose default is
+missing (`needs_setup`) and one whose default is met while another choice is missing (`ready`);
+installables in each state, with a `last_outcome` of each kind; `install-*.json` results
+(installed, failed, cancelled with the old installation kept, busy, unavailable) and
+`uninstall-*.json`; refusals `unknown_installable` and `not_ready` for an install.
 
 ## Changes from v0.4
 

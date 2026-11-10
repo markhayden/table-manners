@@ -1,0 +1,17 @@
+{
+  "id": "birefnet",
+  "title": "OWLv2 + BiRefNet",
+  "kind": "model",
+  "download_bytes": 1100000000,
+  "installed_bytes": 1100000000,
+  "licence": "MIT",
+  "state": "not_installed",
+  "requirements": [
+    {
+      "kind": "file",
+      "name": "free disk 4 GB",
+      "state": "present"
+    }
+  ],
+  "last_outcome": null
+}
