@@ -25,7 +25,8 @@
 //! `x-requirements` is a requirement of that choice, such a parameter has a `default` in its
 //! `enum`, and the action's state follows the truth table (only the default's choice requirements
 //! and the plain ones count); installable ids are unique and every requirement's `installable`
-//! is one of them (3.5). The tool generates them from its own code and keeps
+//! is one of them, and an install or uninstall result names an installable of one of the
+//! tool's descriptions (3.5). The tool generates them from its own code and keeps
 //! its copy current in its own CI; here they are held to the contract.
 
 use std::collections::BTreeSet;
@@ -547,6 +548,15 @@ fn every_tools_fixtures_hold_to_the_contract() {
                 {
                     for action in d.actions.iter_mut().filter(|a| a.name == judging.name) {
                         action.answers = Some(Answers::Verdict);
+                    }
+                }
+                // Installables follow the configuration the same way (rascal lists its
+                // segmenters only with a catalogue that has them), so an install result's id
+                // is the tool's when any of its descriptions lists it (3.5).
+                for item in other.installables.into_iter().flatten() {
+                    let list = d.installables.get_or_insert_with(Vec::new);
+                    if !list.iter().any(|i| i.id == item.id) {
+                        list.push(item);
                     }
                 }
             }

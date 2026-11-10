@@ -14,15 +14,15 @@ v0.1 columns below are kept for review.
 Work for rascal's M14 (its PLAN.md: a person picks the segmenter and installs the models). squint
 lists no installables and no choice requirements, so it bumps its pin and regenerates its fixtures
 with nothing else to change; Wafflery renders the choice field and the Installables list and calls
-the controls as a client. The crate stays at `0.5.0` until the coordinated bump (rascal PLAN.md
-14.13).
+the controls as a client. The crate is at `0.6.0` (rascal PLAN.md 14.13); each tool pins `=0.6.0`
+by path until it is published, then from crates.io.
 
 | contract | squint | rascal |
 |---|---|---|
-| `x-requirements`, `for_choice`, `installable`; the truth table (3.1) | n/a | to do (M14 14.11): `remove_prompt`'s `model` |
-| `installables` with `last_outcome` (3.5) | n/a | to do (M14 14.11): one per catalogued segmenter |
-| `install` / `uninstall`, `table-manners/installable` progress, `unknown_installable` (5.3) | n/a | to do (M14 14.11) |
-| v0.6 fixtures (7) | to do: regenerated at 0.6.0 | to do |
+| `x-requirements`, `for_choice`, `installable`; the truth table (3.1) | n/a | done (M14 14.11): `remove_prompt`'s `model` |
+| `installables` with `last_outcome` (3.5) | n/a | done (M14 14.11): one per catalogued segmenter |
+| `install` / `uninstall`, `table-manners/installable` progress, `unknown_installable` (5.3) | n/a | done (M14 14.11) |
+| v0.6 fixtures (7) | done: `m14-contract` c54fb88 | done: `m14r-models` bb4850e |
 
 ## v0.5 (verdicts, optional requirements, labels)
 

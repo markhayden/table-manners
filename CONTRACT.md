@@ -1,10 +1,10 @@
-# table-manners, v0.6 (draft)
+# table-manners, v0.6.0 (draft)
 
-Status: **v0.6 draft** on branch `v0.6`: v0.5.0 plus per-choice readiness (3.1), installables
-(3.5) and the reserved `install` and `uninstall` controls (5.3) ("Changes from v0.5" below).
-Drafted for rascal's M14 (a person picks the segmenter and installs the models it needs). The
-crate and every example stay at `0.5.0` until the coordinated bump (rascal PLAN.md 14.13), which
-makes this text v0.6.0.
+Status: **v0.6.0 ready to tag, not binding until tagged**: v0.5.0 plus per-choice readiness
+(3.1), installables (3.5) and the reserved `install` and `uninstall` controls (5.3) ("Changes
+from v0.5" below). Drafted for rascal's M14 (a person picks the segmenter and installs the models
+it needs). The schemas, types, examples and the crate (`0.6.0`) on branch `v0.6` are v0.6.0's,
+and rascal's and squint's fixtures at 0.6.0 pass conformance here (rascal PLAN.md 14.13).
 
 v0.5.0, released 2026-11-05 (tag `v0.5.0`, crates.io `table-manners 0.5.0`).
 v0.4.0 plus a verdict on a judged result (2.4), optional requirements (3.1) and a label on an
@@ -101,7 +101,7 @@ while the tool may still be running. A **header** the contract owns and a **body
 
 ```jsonc
 {
-  "contract": "0.5.0",
+  "contract": "0.6.0",
   "tool": { "name": "squint", "version": "0.2.0" },
   "action": "check",
   "run": { "id": "decision-1793386884140-53022", "resource": "squint://run/decision-…/run.json",
@@ -212,7 +212,7 @@ the header of a completed result it judged:
 
 ```jsonc
 {
-  "contract": "0.5.0",
+  "contract": "0.6.0",
   "profiles": ["images"],
   "tool": { "name": "squint", "version": "0.2.0", "purpose": "Checks an image against what was asked of it." },
   "actions": [
@@ -631,7 +631,7 @@ exactly the arguments the paid call would send:
 It answers with an estimate (`schemas/core/estimate.json`) as `structuredContent`:
 
 ```jsonc
-{ "contract": "0.5.0", "tool": { "name": "squint", "version": "0.2.0" },
+{ "contract": "0.6.0", "tool": { "name": "squint", "version": "0.2.0" },
   "action": "source_fidelity",
   "binding": "sha256:…",
   "session_id": "0b7e3c5a-…",
@@ -693,7 +693,7 @@ A **session** is one serving process's spend ledger. `<tool>://session`
 (`schemas/core/session.json`) returns one atomic observation of it:
 
 ```jsonc
-{ "contract": "0.5.0", "tool": { "name": "rascal", "version": "0.1.0" },
+{ "contract": "0.6.0", "tool": { "name": "rascal", "version": "0.1.0" },
   "id": "0b7e3c5a-6f1d-4c2e-9a8b-3d4e5f6a7b8c", "started": "2026-10-31T18:02:11.530Z",
   "budget_usd": 2.0, "spent_usd": 0.16, "unresolved_usd": 0.04, "reserved_usd": 0.04,
   "remaining_usd": 1.8,
@@ -820,7 +820,7 @@ data (`schemas/core/refusal.json`):
 
 ```jsonc
 // <tool>://artifact/{identity}
-{ "contract": "0.5.0", "tool": { "name": "rascal", "version": "0.1.0" },
+{ "contract": "0.6.0", "tool": { "name": "rascal", "version": "0.1.0" },
   "artifact": { …reference… },
   "preview": { …image out with role "preview"… },
   "record": { …the tool's own… } }
@@ -895,7 +895,7 @@ In member names an identity's `:` is written `-` (`artifacts/sha256-9c1e….mask
 ```jsonc
 { "bundle_version": 1,
   "steps": [
-    { "contract": "0.5.0", "tool": { "name": "rascal", "version": "0.1.0" },
+    { "contract": "0.6.0", "tool": { "name": "rascal", "version": "0.1.0" },
       "invocation": { …4.8… }, "result": { …the original run.json… },
       "inputs":    [ { "port": "image", "image": { …image reference… }, "member": "inputs/3f9a….png" } ],
       "artifacts": [ { "port": "mask", "artifact": { …reference… },
@@ -983,7 +983,7 @@ on stdout.
 ```jsonc
 // export: in, then out
 { "artifact": { …reference… } }
-{ "contract": "0.5.0", "tool": { "name": "rascal", "version": "0.1.0" },
+{ "contract": "0.6.0", "tool": { "name": "rascal", "version": "0.1.0" },
   "artifact": { …reference… },
   "file": { "path": "/abs/rascal-data/exports/sha256-9c1e….mask.tar", "sha256": "…",
             "bytes": 1832448, "media_type": "application/x-tar" } }
@@ -991,7 +991,7 @@ on stdout.
 // import: in, then out
 { "file": { "path": "/abs/allowed/….mask.tar" }, "sha256": "…" }
 { "inline": { "media_type": "application/json", "data": "<base64>" } }
-{ "contract": "0.5.0", "tool": { "name": "rascal", "version": "0.1.0" },
+{ "contract": "0.6.0", "tool": { "name": "rascal", "version": "0.1.0" },
   "artifact": { …reference… }, "already_present": false }
 ```
 
